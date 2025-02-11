@@ -10,6 +10,7 @@ export default function Game() {
   const [attempts, setAttempts] = useState(0);
   const [isGameWon, setIsGameWon] = useState(false);
   const [difficulty, setDifficulty] = useState("easy");
+  const [highScore, setHighScore] = useState(0);
   const inputRef = useRef(null);
 
   let maxAttempts = 10;
@@ -46,6 +47,14 @@ export default function Game() {
       const audio = new Audio(winSound);
       audio.play().catch((error) => console.log(error));
       setIsGameWon(true);
+      const newScore = attempts + 1;
+      if (newScore < highScore || highScore === 0) {
+        setHighScore(newScore);
+        toast.success(`🏆 New High Score: ${newScore} attempts!`, {
+          position: "top-right",
+          duration: 2500,
+        });
+      }
       return;
     }
     if (attempts + 1 >= maxAttempts) {
