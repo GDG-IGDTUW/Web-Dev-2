@@ -1,15 +1,24 @@
-export const generateRandomNumber = (difficulty) => {
-  let min = 1;
-  let max = 10;
+export function generateRandomNumber(difficulty) {
+  let maxNumber;
 
-  if (difficulty === "medium") {
-    max = 50;
-  } else if (difficulty === "hard") {
-    max = 100;
+  switch (difficulty) {
+    case "easy":
+      maxNumber = 100;
+      break;
+    case "medium":
+      maxNumber = 500;
+      break;
+    case "hard":
+      maxNumber = 1000;
+      break;
+    default:
+      maxNumber = 100;
+      break;
   }
 
-  return Math.floor(Math.random() * (max - min + 1) + min);
-};
+  return Math.floor(Math.random() * maxNumber) + 1;
+}
+
 
 export const generateHint = (number) => {
   let hints = [];
