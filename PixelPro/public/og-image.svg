@@ -1,0 +1,77 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with Gradient -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="10" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Pattern -->
+  <g opacity="0.1">
+    <circle cx="100" cy="100" r="80" fill="white"/>
+    <circle cx="1100" cy="530" r="100" fill="white"/>
+    <circle cx="200" cy="500" r="60" fill="white"/>
+    <circle cx="1000" cy="100" r="70" fill="white"/>
+  </g>
+  
+  <!-- Logo Icon -->
+  <g transform="translate(150, 200)">
+    <!-- Code Brackets -->
+    <path d="M 0 0 L -30 0 L -30 230 L 0 230" stroke="white" stroke-width="20" stroke-linecap="round" fill="none" filter="url(#glow)"/>
+    <path d="M 180 0 L 210 0 L 210 230 L 180 230" stroke="white" stroke-width="20" stroke-linecap="round" fill="none" filter="url(#glow)"/>
+    
+    <!-- Pixel Grid -->
+    <rect x="30" y="50" width="40" height="40" fill="white" rx="5" filter="url(#glow)"/>
+    <rect x="80" y="50" width="40" height="40" fill="white" rx="5" opacity="0.7"/>
+    <rect x="130" y="50" width="40" height="40" fill="white" rx="5" opacity="0.5"/>
+    
+    <rect x="30" y="100" width="40" height="40" fill="white" rx="5" opacity="0.7"/>
+    <rect x="80" y="100" width="40" height="40" fill="white" rx="5" filter="url(#glow)"/>
+    <rect x="130" y="100" width="40" height="40" fill="white" rx="5" opacity="0.7"/>
+    
+    <rect x="30" y="150" width="40" height="40" fill="white" rx="5" opacity="0.5"/>
+    <rect x="80" y="150" width="40" height="40" fill="white" rx="5" opacity="0.7"/>
+    <rect x="130" y="150" width="40" height="40" fill="white" rx="5" filter="url(#glow)"/>
+  </g>
+  
+  <!-- Sparkles -->
+  <path d="M 450 100 L 460 130 L 490 140 L 460 150 L 450 180 L 440 150 L 410 140 L 440 130 Z" fill="white" opacity="0.8" filter="url(#glow)"/>
+  <path d="M 950 450 L 960 480 L 990 490 L 960 500 L 950 530 L 940 500 L 910 490 L 940 480 Z" fill="white" opacity="0.6"/>
+  <path d="M 500 520 L 508 545 L 533 553 L 508 561 L 500 586 L 492 561 L 467 553 L 492 545 Z" fill="white" opacity="0.7"/>
+  
+  <!-- Text Content -->
+  <text x="450" y="270" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="white" filter="url(#glow)">
+    PixelPro
+  </text>
+  
+  <text x="450" y="340" font-family="Arial, sans-serif" font-size="36" fill="white" opacity="0.95">
+    AI-Powered UI Component Generator
+  </text>
+  
+  <text x="450" y="410" font-family="Arial, sans-serif" font-size="28" fill="white" opacity="0.85">
+    ✨ Describe your component → Get production-ready code
+  </text>
+  
+  <text x="450" y="460" font-family="Arial, sans-serif" font-size="24" fill="white" opacity="0.8">
+    HTML • Tailwind CSS • React
+  </text>
+  
+  <!-- Bottom Badge -->
+  <rect x="450" y="510" width="400" height="50" rx="25" fill="white" opacity="0.2"/>
+  <text x="650" y="545" font-family="Arial, sans-serif" font-size="22" fill="white" font-weight="600" text-anchor="middle">
+    Open Source • Beginner Friendly
+  </text>
+</svg>

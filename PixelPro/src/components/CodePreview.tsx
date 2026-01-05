@@ -1,0 +1,93 @@
+import { useState } from "react";
+import { Check, Copy, Code2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+interface CodePreviewProps {
+  code: string;
+  framework: string;
+}
+
+export const CodePreview = ({ code, framework }: CodePreviewProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      toast.success("Code copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("Failed to copy code");
+    }
+  };
+
+  const getLanguageLabel = () => {
+    switch (framework) {
+      case "html":
+        return "HTML / CSS";
+      case "tailwind":
+        return "HTML + Tailwind";
+      case "react":
+        return "React + Tailwind";
+      default:
+        return "Code";
+    }
+  };
+
+  return (
+    <div className="animate-fade-in-up">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Code2 className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-foreground">Generated Code</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+            {getLanguageLabel()}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopy}
+          className="gap-2"
+        >
+          {copied ? (
+            <>
+              <Check className="w-4 h-4 text-success" />
+              <span className="text-success">Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-4 h-4" />
+              <span>Copy</span>
+            </>
+          )}
+        </Button>
+      </div>
+      
+      <div className="relative rounded-lg border border-code-border bg-code overflow-hidden">
+        {/* Code editor header */}
+        <div className="flex items-center gap-2 px-4 py-2 bg-secondary/50 border-b border-border">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-destructive/60" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+            <div className="w-3 h-3 rounded-full bg-success/60" />
+          </div>
+          <span className="text-xs text-muted-foreground ml-2">component.{framework === "react" ? "tsx" : "html"}</span>
+        </div>
+        
+        {/* Code content */}
+        <div className="relative">
+          <pre className="p-4 overflow-x-auto code-scrollbar max-h-[400px]">
+            <code className="text-sm font-mono text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
+              {code}
+            </code>
+          </pre>
+          
+          {/* Line numbers gutter effect */}
+          <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-code to-transparent pointer-events-none" />
+        </div>
+      </div>
+    </div>
+  );
+};
