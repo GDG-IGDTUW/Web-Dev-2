@@ -20,624 +20,629 @@ interface StudySession {
   date: string;
 }
 
-export default function StudyPlanner() {
+interface TaskUpdate {
+  id: string;
+  taskId: string;
+  date: string;
+  notes: string;
+  progress: number; // 0-100
+  timeSpent: number; // in minutes
+}
+
+export default function Calendar() {
   const router = useRouter();
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
-  const [showAddTask, setShowAddTask] = useState(false);
-  const [showAddSession, setShowAddSession] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'sessions'>('tasks');
+  const [taskUpdates, setTaskUpdates] = useState<TaskUpdate[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [newUpdateNote, setNewUpdateNote] = useState('');
+  const [newUpdateProgress, setNewUpdateProgress] = useState(0);
+  const [newUpdateTimeSpent, setNewUpdateTimeSpent] = useState(30);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
     const savedSessions = localStorage.getItem('studySessions');
+    const savedTaskUpdates = localStorage.getItem('taskUpdates');
     
     if (savedTasks) setTasks(JSON.parse(savedTasks));
     if (savedSessions) setSessions(JSON.parse(savedSessions));
+    if (savedTaskUpdates) setTaskUpdates(JSON.parse(savedTaskUpdates));
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('studyTasks', JSON.stringify(tasks));
-  }, [tasks]);
+  const saveTaskUpdates = (updates: TaskUpdate[]) => {
+    setTaskUpdates(updates);
+    localStorage.setItem('taskUpdates', JSON.stringify(updates));
+  };
 
-  useEffect(() => {
-    localStorage.setItem('studySessions', JSON.stringify(sessions));
-  }, [sessions]);
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    const days: Array<{
+      day: number;
+      month: number;
+      year: number;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+      dateString: string;
+    }> = [];
 
-  const addTask = (task: Omit<Task, 'id' | 'completed'>) => {
-    const newTask: Task = {
-      ...task,
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = daysInPrevMonth - i;
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevYear = month === 0 ? year - 1 : year;
+      days.push({
+        day,
+        month: prevMonth,
+        year: prevYear,
+        isCurrentMonth: false,
+        isToday: false,
+        dateString: `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      });
+    }
+
+    // Current month days
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isToday = day === today.getDate() && 
+                     month === today.getMonth() && 
+                     year === today.getFullYear();
+      days.push({
+        day,
+        month,
+        year,
+        isCurrentMonth: true,
+        isToday,
+        dateString: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      });
+    }
+
+    // Next month days
+    const remainingDays = 42 - days.length;
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    for (let day = 1; day <= remainingDays; day++) {
+      days.push({
+        day,
+        month: nextMonth,
+        year: nextYear,
+        isCurrentMonth: false,
+        isToday: false,
+        dateString: `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      });
+    }
+
+    return days;
+  };
+
+  const getTasksForDate = (dateString: string) => {
+    return tasks.filter(task => task.dueDate === dateString);
+  };
+
+  const getSessionsForDate = (dateString: string) => {
+    return sessions.filter(session => session.date === dateString);
+  };
+
+  const getUpdatesForTaskOnDate = (taskId: string, dateString: string) => {
+    return taskUpdates.filter(update => 
+      update.taskId === taskId && update.date === dateString
+    );
+  };
+
+  const handleDotClick = (dateString: string, taskId?: string) => {
+    if (taskId) {
+      setSelectedTaskId(taskId);
+    }
+    setSelectedDate(dateString);
+    setShowModal(true);
+  };
+
+  const handleAddUpdate = () => {
+    if (!selectedTaskId || !selectedDate || !newUpdateNote.trim()) return;
+
+    const newUpdate: TaskUpdate = {
       id: Date.now().toString(),
-      completed: false,
+      taskId: selectedTaskId,
+      date: selectedDate,
+      notes: newUpdateNote,
+      progress: newUpdateProgress,
+      timeSpent: newUpdateTimeSpent
     };
-    setTasks([...tasks, newTask]);
-    setShowAddTask(false);
+
+    const updatedTaskUpdates = [...taskUpdates, newUpdate];
+    saveTaskUpdates(updatedTaskUpdates);
+
+    // Update task completion if progress is 100%
+    if (newUpdateProgress === 100) {
+      const updatedTasks = tasks.map(task => 
+        task.id === selectedTaskId ? { ...task, completed: true } : task
+      );
+      setTasks(updatedTasks);
+      localStorage.setItem('studyTasks', JSON.stringify(updatedTasks));
+    }
+
+    setNewUpdateNote('');
+    setNewUpdateProgress(0);
+    setNewUpdateTimeSpent(30);
+    setSelectedTaskId(null);
   };
 
-  const toggleTask = (id: string) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+  const handleDeleteUpdate = (updateId: string) => {
+    const updatedTaskUpdates = taskUpdates.filter(update => update.id !== updateId);
+    saveTaskUpdates(updatedTaskUpdates);
   };
 
-  const deleteTask = (id: string) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  const previousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   };
 
-  const addSession = (session: Omit<StudySession, 'id'>) => {
-    const newSession: StudySession = {
-      ...session,
-      id: Date.now().toString(),
-    };
-    setSessions([...sessions, newSession]);
-    setShowAddSession(false);
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
-  const deleteSession = (id: string) => {
-    setSessions(sessions.filter(session => session.id !== id));
+  const goToToday = () => {
+    setCurrentDate(new Date());
   };
 
-  const getTotalStudyTime = () => {
-    return sessions.reduce((total, session) => total + session.duration, 0);
-  };
+  const days = getDaysInMonth(currentDate);
+  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-gradient-to-r from-red-900/40 to-red-800/40 text-red-300 border-red-700/50';
-      case 'medium': return 'bg-gradient-to-r from-yellow-900/40 to-amber-800/40 text-yellow-300 border-yellow-700/50';
-      case 'low': return 'bg-gradient-to-r from-green-900/40 to-emerald-800/40 text-emerald-300 border-emerald-700/50';
-      default: return 'bg-gradient-to-r from-gray-800 to-gray-700 text-gray-300 border-gray-600';
+      case 'high': return 'bg-red-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'low': return 'bg-green-500';
+      default: return 'bg-gray-500';
     }
   };
 
-  const handlePomodoroClick = () => {
-    router.push('/pomodoro');
+  const getTaskDotColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-400 shadow-red-400/50';
+      case 'medium': return 'bg-yellow-400 shadow-yellow-400/50';
+      case 'low': return 'bg-green-400 shadow-green-400/50';
+      default: return 'bg-gray-400';
+    }
   };
-  const handleCalenderClick = () => {
-    router.push('/calender');
+
+  const getSelectedTask = () => {
+    return tasks.find(task => task.id === selectedTaskId);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <header className="mb-8 md:mb-12">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        {/* Header */}
+        <header className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-cyan-400 mb-2">
-                Study Planner
-              </h1>
-              <p className="text-gray-400 text-lg">Organize, track, and excel in your studies</p>
+                Study Calendar
+                </h1>
+              <p className="text-gray-400 text-lg">Track your tasks and progress</p>
             </div>
-            
-            {/* Pomodoro Timer Button */}
-            <button
-              onClick={handlePomodoroClick}
-              className="group relative bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl hover:shadow-green-500/20 flex items-center gap-2"
-            >
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-              </span>
-              Pomodoro Timer
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </button>
-            <button
-              onClick={handleCalenderClick}
-              className="group relative bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl hover:shadow-green-500/20 flex items-center gap-2"
-            >
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-              </span>
-              Calender
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push('/study-planner')}
+                className="bg-gradient-to-r from-gray-700 to-gray-800 text-white px-6 py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 shadow-xl"
+              >
+                ← Study Planner
+              </button>
+              <button
+                onClick={() => router.push('/pomodoro')}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl"
+              >
+                Pomodoro Timer →
+              </button>
+            </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-lg hover:border-green-500/30 transition-all duration-300 group">
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                  <span className="text-green-400">📚</span>
-                </div>
+                <span className="text-2xl">📅</span>
                 <h3 className="text-sm font-semibold text-gray-400">Total Tasks</h3>
               </div>
-              <p className="text-4xl font-bold text-green-400">{tasks.length}</p>
+              <p className="text-4xl font-bold text-blue-400">{tasks.length}</p>
             </div>
-            
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-lg hover:border-emerald-500/30 transition-all duration-300 group">
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
-                  <span className="text-emerald-400">✅</span>
-                </div>
-                <h3 className="text-sm font-semibold text-gray-400">Completed</h3>
+                <span className="text-2xl">📝</span>
+                <h3 className="text-sm font-semibold text-gray-400">Updates</h3>
               </div>
-              <p className="text-4xl font-bold text-emerald-400">
-                {tasks.filter(t => t.completed).length}
-              </p>
+              <p className="text-4xl font-bold text-cyan-400">{taskUpdates.length}</p>
             </div>
-            
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-lg hover:border-cyan-500/30 transition-all duration-300 group">
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                  <span className="text-cyan-400">⏱️</span>
-                </div>
-                <h3 className="text-sm font-semibold text-gray-400">Study Hours</h3>
-              </div>
-              <p className="text-4xl font-bold text-cyan-400">
-                {(getTotalStudyTime() / 60).toFixed(1)}h
-              </p>
-            </div>
-            
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-lg hover:border-blue-500/30 transition-all duration-300 group">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                  <span className="text-blue-400">📊</span>
-                </div>
+                <span className="text-2xl">📊</span>
                 <h3 className="text-sm font-semibold text-gray-400">Sessions</h3>
               </div>
-              <p className="text-4xl font-bold text-blue-400">{sessions.length}</p>
+              <p className="text-4xl font-bold text-teal-400">{sessions.length}</p>
+            </div>
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-2xl">⏱️</span>
+                <h3 className="text-sm font-semibold text-gray-400">Total Hours</h3>
+              </div>
+              <p className="text-4xl font-bold text-emerald-400">
+                {(sessions.reduce((sum, s) => sum + s.duration, 0) / 60).toFixed(1)}h
+              </p>
             </div>
           </div>
         </header>
 
-        {/* Main Content */}
-        <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-gray-700/50 shadow-2xl">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-700/50 mb-8">
-            <button
-              onClick={() => setActiveTab('tasks')}
-              className={`relative px-8 py-4 font-semibold text-lg transition-all ${
-                activeTab === 'tasks'
-                  ? 'text-green-400'
-                  : 'text-gray-400 hover:text-gray-300'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <span className={`text-xl ${activeTab === 'tasks' ? 'text-green-400' : 'text-gray-500'}`}>
-                  📝
-                </span>
-                Tasks & Assignments
-                {activeTab === 'tasks' && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-green-500 to-emerald-500"></span>
-                )}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('sessions')}
-              className={`relative px-8 py-4 font-semibold text-lg transition-all ${
-                activeTab === 'sessions'
-                  ? 'text-emerald-400'
-                  : 'text-gray-400 hover:text-gray-300'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <span className={`text-xl ${activeTab === 'sessions' ? 'text-emerald-400' : 'text-gray-500'}`}>
-                  📊
-                </span>
-                Study Sessions
-                {activeTab === 'sessions' && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-cyan-500"></span>
-                )}
-              </span>
-            </button>
-          </div>
-
-          {/* Tasks Tab */}
-          {activeTab === 'tasks' && (
-            <div className="animate-fadeIn">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Your Study Tasks</h2>
-                  <p className="text-gray-400">Manage assignments, readings, and study materials</p>
-                </div>
-                <button
-                  onClick={() => setShowAddTask(true)}
-                  className="group bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl hover:shadow-green-500/20 flex items-center gap-2"
-                >
-                  <span className="text-lg">+</span>
-                  Add New Task
-                </button>
-              </div>
-
-              {showAddTask && (
-                <TaskForm onSubmit={addTask} onCancel={() => setShowAddTask(false)} />
-              )}
-
-              <div className="space-y-4 mt-8">
-                {tasks.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed border-gray-700/50 rounded-2xl bg-gradient-to-br from-gray-800/20 to-gray-900/20">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                      <span className="text-2xl">📚</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-300 mb-2">No tasks yet</h3>
-                    <p className="text-gray-500">Add your first task to get started!</p>
-                  </div>
-                ) : (
-                  tasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onToggle={toggleTask}
-                      onDelete={deleteTask}
-                      getPriorityColor={getPriorityColor}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Sessions Tab */}
-          {activeTab === 'sessions' && (
-            <div className="animate-fadeIn">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Study Sessions</h2>
-                  <p className="text-gray-400">Track your study time and progress</p>
-                </div>
-                <button
-                  onClick={() => setShowAddSession(true)}
-                  className="group bg-gradient-to-r from-emerald-600 to-cyan-600 text-white px-6 py-3 rounded-xl hover:from-emerald-700 hover:to-cyan-700 transition-all duration-300 shadow-xl hover:shadow-cyan-500/20 flex items-center gap-2"
-                >
-                  <span className="text-lg">+</span>
-                  Log Session
-                </button>
-              </div>
-
-              {showAddSession && (
-                <SessionForm onSubmit={addSession} onCancel={() => setShowAddSession(false)} />
-              )}
-
-              <div className="space-y-4 mt-8">
-                {sessions.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed border-gray-700/50 rounded-2xl bg-gradient-to-br from-gray-800/20 to-gray-900/20">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                      <span className="text-2xl">⏱️</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-300 mb-2">No sessions logged</h3>
-                    <p className="text-gray-500">Log your first study session to track progress!</p>
-                  </div>
-                ) : (
-                  sessions.map(session => (
-                    <SessionCard
-                      key={session.id}
-                      session={session}
-                      onDelete={deleteSession}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TaskForm({ onSubmit, onCancel }: { 
-  onSubmit: (task: Omit<Task, 'id' | 'completed'>) => void;
-  onCancel: () => void;
-}) {
-  const [formData, setFormData] = useState({
-    title: '',
-    subject: '',
-    dueDate: '',
-    priority: 'medium' as 'low' | 'medium' | 'high',
-    notes: '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.title && formData.subject && formData.dueDate) {
-      onSubmit(formData);
-      setFormData({ title: '', subject: '', dueDate: '', priority: 'medium', notes: '' });
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-green-800/30 mb-6 shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-        <div>
-          <label className="block text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
-            <span>📝</span>
-            Task Title *
-          </label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="e.g., Complete Math assignment chapter 5"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
-            <span>🎯</span>
-            Subject *
-          </label>
-          <input
-            type="text"
-            value={formData.subject}
-            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="e.g., Mathematics, Physics, etc."
-            required
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-        <div>
-          <label className="block text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
-            <span>📅</span>
-            Due Date *
-          </label>
-          <input
-            type="date"
-            value={formData.dueDate}
-            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
-            <span>⚡</span>
-            Priority
-          </label>
-          <select
-            value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-            className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          >
-            <option value="low" className="bg-gray-800">Low Priority</option>
-            <option value="medium" className="bg-gray-800">Medium Priority</option>
-            <option value="high" className="bg-gray-800">High Priority</option>
-          </select>
-        </div>
-      </div>
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
-          <span>📋</span>
-          Notes (Optional)
-        </label>
-        <textarea
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          rows={3}
-          placeholder="Add additional details, instructions, or links..."
-        />
-      </div>
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-green-500/20"
-        >
-          Add Task
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 bg-gray-800/60 text-gray-300 px-6 py-3 rounded-xl hover:bg-gray-700/60 hover:text-white transition-colors border border-gray-700"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function TaskCard({ task, onToggle, onDelete, getPriorityColor }: {
-  task: Task;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  getPriorityColor: (priority: string) => string;
-}) {
-  return (
-    <div className={`border-2 rounded-2xl p-5 transition-all duration-300 backdrop-blur-sm hover:scale-[1.01] ${
-      task.completed 
-        ? 'bg-gradient-to-br from-gray-800/30 to-gray-900/30 border-gray-700/50' 
-        : 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-green-800/30 hover:border-green-500/50'
-    }`}>
-      <div className="flex items-start gap-4">
-        <button
-          onClick={() => onToggle(task.id)}
-          className={`mt-1 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-            task.completed 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 border-transparent' 
-              : 'border-gray-600 hover:border-green-500'
-          }`}
-        >
-          {task.completed && '✓'}
-        </button>
-        <div className="flex-1">
-          <div className="flex flex-col md:flex-row md:items-start justify-between mb-3 gap-2">
-            <div>
-              <h3 className={`text-xl font-semibold mb-2 ${
-                task.completed ? 'line-through text-gray-500' : 'text-white'
-              }`}>
-                {task.title}
-              </h3>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-emerald-400 bg-emerald-900/30 px-3 py-1 rounded-lg">
-                  {task.subject}
-                </span>
-                <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${getPriorityColor(task.priority)}`}>
-                  {task.priority.toUpperCase()}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-2">
+        {/* Calendar */}
+        <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-gray-700/50 shadow-2xl">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold text-white">{monthName}</h2>
+            <div className="flex gap-3">
               <button
-                onClick={() => onDelete(task.id)}
-                className="text-red-400 hover:text-red-300 hover:bg-red-900/20 px-3 py-1 rounded-lg transition-colors"
+                onClick={goToToday}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all"
               >
-                Delete
+                Today
+              </button>
+              <button
+                onClick={previousMonth}
+                className="bg-gray-700 text-white w-10 h-10 rounded-lg hover:bg-gray-600 transition-all flex items-center justify-center"
+              >
+                ←
+              </button>
+              <button
+                onClick={nextMonth}
+                className="bg-gray-700 text-white w-10 h-10 rounded-lg hover:bg-gray-600 transition-all flex items-center justify-center"
+              >
+                →
               </button>
             </div>
           </div>
-          
-          {task.notes && (
-            <div className="bg-gray-900/40 rounded-lg p-3 mb-3">
-              <p className="text-gray-300 text-sm">{task.notes}</p>
-            </div>
-          )}
-          
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-700/50">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400">Due:</span>
-              <span className={`text-sm font-medium ${task.completed ? 'text-gray-500' : 'text-green-400'}`}>
-                {new Date(task.dueDate).toLocaleDateString('en-US', { 
-                  weekday: 'short', 
-                  year: 'numeric', 
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
-              </span>
-            </div>
-            <div className="text-xs text-gray-500">
-              {task.completed ? 'Completed' : 'In Progress'}
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-2">
+            {/* Day Headers */}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="text-center font-semibold text-gray-400 py-3">
+                {day}
+              </div>
+            ))}
+
+            {/* Calendar Days */}
+            {days.map((dayInfo, index) => {
+              const dayTasks = getTasksForDate(dayInfo.dateString);
+              const daySessions = getSessionsForDate(dayInfo.dateString);
+              const hasEvents = dayTasks.length > 0 || daySessions.length > 0;
+
+              return (
+                <div
+                  key={index}
+                  className={`
+                    relative min-h-32 p-2 rounded-xl border-2 transition-all
+                    ${dayInfo.isCurrentMonth 
+                      ? 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600' 
+                      : 'bg-gray-900/30 border-gray-800/30'
+                    }
+                    ${dayInfo.isToday ? 'ring-2 ring-blue-500 border-blue-500' : ''}
+                  `}
+                >
+                  <div className={`text-sm font-semibold mb-3 ${
+                    dayInfo.isToday ? 'text-blue-400' : 
+                    dayInfo.isCurrentMonth ? 'text-white' : 'text-gray-600'
+                  }`}>
+                    {dayInfo.day}
+                  </div>
+
+                  {/* Task Dots */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {dayTasks.map((task, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleDotClick(dayInfo.dateString, task.id)}
+                        className={`w-3 h-3 rounded-full ${getTaskDotColor(task.priority)} 
+                          shadow-lg hover:scale-125 transition-all duration-200
+                          ${task.completed ? 'opacity-50' : ''}`}
+                        title={`${task.title} - ${task.priority} priority`}
+                      />
+                    ))}
+                    {daySessions.length > 0 && (
+                      <button
+                        onClick={() => handleDotClick(dayInfo.dateString)}
+                        className="w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50
+                          hover:scale-125 transition-all duration-200"
+                        title={`${daySessions.length} study session(s)`}
+                      />
+                    )}
+                  </div>
+
+                  {/* Update Dots (if any) */}
+                  {dayTasks.some(task => getUpdatesForTaskOnDate(task.id, dayInfo.dateString).length > 0) && (
+                    <div className="absolute bottom-2 right-2">
+                      <span className="text-xs text-gray-400">📝</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-8 pt-6 border-t border-gray-700/50">
+            <h3 className="text-sm font-semibold text-gray-400 mb-3">Legend:</h3>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-400 shadow-red-400/50"></div>
+                <span className="text-sm text-gray-300">High Priority Task</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-400 shadow-yellow-400/50"></div>
+                <span className="text-sm text-gray-300">Medium Priority Task</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-400 shadow-green-400/50"></div>
+                <span className="text-sm text-gray-300">Low Priority Task</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-cyan-400/50"></div>
+                <span className="text-sm text-gray-300">Study Session</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs">📝</span>
+                <span className="text-sm text-gray-300">Task Updates</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function SessionForm({ onSubmit, onCancel }: {
-  onSubmit: (session: Omit<StudySession, 'id'>) => void;
-  onCancel: () => void;
-}) {
-  const [formData, setFormData] = useState({
-    subject: '',
-    duration: '',
-    date: new Date().toISOString().split('T')[0],
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.subject && formData.duration) {
-      onSubmit({
-        subject: formData.subject,
-        duration: parseInt(formData.duration),
-        date: formData.date,
-      });
-      setFormData({ subject: '', duration: '', date: new Date().toISOString().split('T')[0] });
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-emerald-800/30 mb-6 shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-        <div>
-          <label className="block text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
-            <span>📚</span>
-            Subject *
-          </label>
-          <input
-            type="text"
-            value={formData.subject}
-            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="e.g., Physics, Calculus, etc."
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
-            <span>⏱️</span>
-            Duration (minutes) *
-          </label>
-          <input
-            type="number"
-            value={formData.duration}
-            onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            placeholder="e.g., 45, 60, 90"
-            min="1"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
-            <span>📅</span>
-            Date *
-          </label>
-          <input
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            required
-          />
-        </div>
-      </div>
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          className="flex-1 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white px-6 py-3 rounded-xl hover:from-emerald-700 hover:to-cyan-700 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20"
-        >
-          Log Session
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 bg-gray-800/60 text-gray-300 px-6 py-3 rounded-xl hover:bg-gray-700/60 hover:text-white transition-colors border border-gray-700"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function SessionCard({ session, onDelete }: {
-  session: StudySession;
-  onDelete: (id: string) => void;
-}) {
-  const hours = Math.floor(session.duration / 60);
-  const minutes = session.duration % 60;
-  
-  return (
-    <div className="border-2 border-emerald-800/30 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-5 backdrop-blur-sm hover:border-emerald-500/50 transition-all duration-300 hover:scale-[1.01]">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold text-white mb-2">{session.subject}</h3>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-emerald-400">⏱️</span>
-              <span className="text-emerald-300">
-                {hours > 0 ? `${hours}h ` : ''}{minutes}m
-              </span>
+      {/* Modal for Day/Task Details */}
+      {showModal && selectedDate && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => {
+          setShowModal(false);
+          setSelectedTaskId(null);
+          setNewUpdateNote('');
+          setNewUpdateProgress(0);
+          setNewUpdateTimeSpent(30);
+        }}>
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1">
+                  {selectedTaskId ? 'Task Progress' : new Date(selectedDate).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </h2>
+                <p className="text-gray-400">
+                  {selectedTaskId ? 'Add updates and track progress' : 'Tasks and sessions for this day'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedTaskId(null);
+                  setNewUpdateNote('');
+                  setNewUpdateProgress(0);
+                  setNewUpdateTimeSpent(30);
+                }}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-cyan-400">📅</span>
-              <span className="text-cyan-300">
-                {new Date(session.date).toLocaleDateString('en-US', { 
-                  weekday: 'short', 
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
-              </span>
-            </div>
-            <div className="text-sm text-gray-400">
-              {new Date(session.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
+
+            {selectedTaskId ? (
+              // Task Update Section
+              <div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-emerald-400 mb-3">Selected Task</h3>
+                  {getSelectedTask() && (
+                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 mb-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold text-white flex-1">{getSelectedTask()!.title}</h4>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          getSelectedTask()!.priority === 'high' ? 'bg-red-900/40 text-red-400' :
+                          getSelectedTask()!.priority === 'medium' ? 'bg-yellow-900/40 text-yellow-400' :
+                          'bg-green-900/40 text-green-400'
+                        }`}>
+                          {getSelectedTask()!.priority}
+                        </span>
+                      </div>
+                      <p className="text-sm text-emerald-400 mb-2">{getSelectedTask()!.subject}</p>
+                      {getSelectedTask()!.notes && (
+                        <p className="text-sm text-gray-400">{getSelectedTask()!.notes}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Existing Updates */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-3">Previous Updates</h3>
+                  <div className="space-y-3">
+                    {getUpdatesForTaskOnDate(selectedTaskId, selectedDate).length === 0 ? (
+                      <p className="text-gray-400 text-sm">No updates yet for this date</p>
+                    ) : (
+                      getUpdatesForTaskOnDate(selectedTaskId, selectedDate).map(update => (
+                        <div key={update.id} className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <p className="text-white">{update.notes}</p>
+                              <div className="flex items-center gap-4 mt-2">
+                                <span className="text-sm text-cyan-400">Progress: {update.progress}%</span>
+                                <span className="text-sm text-emerald-400">Time: {update.timeSpent}m</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteUpdate(update.id)}
+                              className="text-red-400 hover:text-red-300 text-sm"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Add New Update */}
+                <div>
+                  <h3 className="text-lg font-semibold text-green-400 mb-3">Add New Update</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-400 mb-2">Update Notes</label>
+                      <textarea
+                        value={newUpdateNote}
+                        onChange={(e) => setNewUpdateNote(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        rows={3}
+                        placeholder="What did you work on? What progress did you make?"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-400 mb-2">
+                          Progress (%): {newUpdateProgress}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={newUpdateProgress}
+                          onChange={(e) => setNewUpdateProgress(parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1">
+                          <span>0%</span>
+                          <span>50%</span>
+                          <span>100%</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-400 mb-2">Time Spent (minutes)</label>
+                        <select
+                          value={newUpdateTimeSpent}
+                          onChange={(e) => setNewUpdateTimeSpent(parseInt(e.target.value))}
+                          className="w-full px-4 py-3 bg-gray-900/60 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
+                        >
+                          {[15, 30, 45, 60, 90, 120, 150, 180].map(minutes => (
+                            <option key={minutes} value={minutes}>{minutes} minutes</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={handleAddUpdate}
+                      disabled={!newUpdateNote.trim()}
+                      className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                        newUpdateNote.trim() 
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white' 
+                          : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Add Progress Update
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Day Overview Section
+              <>
+                {/* Tasks Section */}
+                {getTasksForDate(selectedDate).length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
+                      <span>📝</span>
+                      Tasks Due
+                    </h3>
+                    <div className="space-y-3">
+                      {getTasksForDate(selectedDate).map(task => (
+                        <button
+                          key={task.id}
+                          onClick={() => setSelectedTaskId(task.id)}
+                          className="w-full text-left bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 hover:border-emerald-500 transition-all"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-semibold text-white flex-1">{task.title}</h4>
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              task.priority === 'high' ? 'bg-red-900/40 text-red-400' :
+                              task.priority === 'medium' ? 'bg-yellow-900/40 text-yellow-400' :
+                              'bg-green-900/40 text-green-400'
+                            }`}>
+                              {task.priority}
+                            </span>
+                          </div>
+                          <p className="text-sm text-emerald-400 mb-2">{task.subject}</p>
+                          {task.notes && (
+                            <p className="text-sm text-gray-400">{task.notes}</p>
+                          )}
+                          <div className="mt-3 flex items-center justify-between">
+                            <span className="text-xs text-cyan-400">
+                              Click to add progress updates
+                            </span>
+                            {task.completed && (
+                              <span className="text-xs text-green-400">✓ Completed</span>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sessions Section */}
+                {getSessionsForDate(selectedDate).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-cyan-400 mb-3 flex items-center gap-2">
+                      <span>📊</span>
+                      Study Sessions
+                    </h3>
+                    <div className="space-y-3">
+                      {getSessionsForDate(selectedDate).map(session => {
+                        const hours = Math.floor(session.duration / 60);
+                        const minutes = session.duration % 60;
+                        return (
+                          <div
+                            key={session.id}
+                            className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold text-white">{session.subject}</h4>
+                              <span className="text-cyan-400 font-semibold">
+                                {hours > 0 ? `${hours}h ` : ''}{minutes}m
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {getTasksForDate(selectedDate).length === 0 && getSessionsForDate(selectedDate).length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    No tasks or sessions on this day
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
-        <button
-          onClick={() => onDelete(session.id)}
-          className="text-red-400 hover:text-red-300 hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors"
-        >
-          Delete
-        </button>
-      </div>
+      )}
     </div>
   );
 }
