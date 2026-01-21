@@ -88,6 +88,12 @@ export default function PomodoroTimer() {
 
   const completeSession = () => {
     setIsRunning(false);
+
+  
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
     
 
     if (!isBreak) {
@@ -252,9 +258,15 @@ export default function PomodoroTimer() {
                   {!isRunning ? (
                     <button
                       onClick={() => {
+                        if (audioRef.current) {
+                          audioRef.current.play().catch(() => {});
+                          audioRef.current.pause();
+                          audioRef.current.currentTime = 0;
+                        }
                         startTimer();
                         requestNotificationPermission();
                       }}
+
                       className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-12 py-4 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl text-lg font-semibold"
                     >
                       ▶ Start
@@ -378,6 +390,11 @@ export default function PomodoroTimer() {
             </div>
           </div>
         </div>
+        <audio
+          ref={audioRef}
+          src="/sounds/bell-172780 copy.mp3"
+          preload="auto"
+        />
       </div>
     </div>
   );
