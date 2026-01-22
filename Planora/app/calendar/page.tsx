@@ -203,18 +203,39 @@ export default function Calendar() {
     }
   };
 
-  const getTaskDotColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-400 shadow-red-400/50';
-      case 'medium': return 'bg-yellow-400 shadow-yellow-400/50';
-      case 'low': return 'bg-green-400 shadow-green-400/50';
-      default: return 'bg-gray-400';
-    }
-  };
 
   const getSelectedTask = () => {
     return tasks.find(task => task.id === selectedTaskId);
   };
+
+  const MAX_VISIBLE_TASKS = 3;
+
+const TaskBlock = ({
+  task,
+  onClick,
+}: {
+  task: Task;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    className={`w-full text-left px-2 py-1 rounded-md text-xs font-medium truncate
+      ${
+        task.priority === 'high'
+          ? 'bg-red-900/40 text-red-300'
+          : task.priority === 'medium'
+          ? 'bg-yellow-900/40 text-yellow-300'
+          : 'bg-green-900/40 text-green-300'
+      }
+      hover:opacity-90 transition`}
+    title={task.title}
+  >
+    {task.title}
+  </button>
+);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-6">
@@ -324,7 +345,9 @@ export default function Calendar() {
               return (
                 <div
                   key={index}
+                  onClick={() => handleDotClick(dayInfo.dateString)}
                   className={`
+
                     relative min-h-32 p-2 rounded-xl border-2 transition-all
                     ${dayInfo.isCurrentMonth 
                       ? 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600' 
@@ -340,27 +363,29 @@ export default function Calendar() {
                     {dayInfo.day}
                   </div>
 
-                  {/* Task Dots */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {dayTasks.map((task, i) => (
-                      <button
-                        key={i}
+                  {/* Tasks Preview (VISIBLE BLOCKS) */}
+                  <div className="space-y-1">
+                    {dayTasks.slice(0, MAX_VISIBLE_TASKS).map(task => (
+                      <TaskBlock
+                        key={task.id}
+                        task={task}
                         onClick={() => handleDotClick(dayInfo.dateString, task.id)}
-                        className={`w-3 h-3 rounded-full ${getTaskDotColor(task.priority)} 
-                          shadow-lg hover:scale-125 transition-all duration-200
-                          ${task.completed ? 'opacity-50' : ''}`}
-                        title={`${task.title} - ${task.priority} priority`}
                       />
-                    ))}
-                    {daySessions.length > 0 && (
-                      <button
-                        onClick={() => handleDotClick(dayInfo.dateString)}
-                        className="w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50
-                          hover:scale-125 transition-all duration-200"
-                        title={`${daySessions.length} study session(s)`}
-                      />
-                    )}
+                  ))}
+
+                  {dayTasks.length > MAX_VISIBLE_TASKS && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDotClick(dayInfo.dateString);
+                  }}
+                  className="text-xs text-cyan-400 hover:underline"
+                  >
+                  +{dayTasks.length - MAX_VISIBLE_TASKS} more
+                  </button>
+                  )}
                   </div>
+
 
                   {/* Update Dots (if any) */}
                   {dayTasks.some(task => getUpdatesForTaskOnDate(task.id, dayInfo.dateString).length > 0) && (
