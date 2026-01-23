@@ -41,6 +41,7 @@ export default function Calendar() {
   const [newUpdateNote, setNewUpdateNote] = useState('');
   const [newUpdateProgress, setNewUpdateProgress] = useState(0);
   const [newUpdateTimeSpent, setNewUpdateTimeSpent] = useState(30);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
@@ -144,6 +145,20 @@ export default function Calendar() {
     setShowModal(true);
   };
 
+  const handleTaskDrop = (dateString: string) => {
+  if (!draggedTaskId) return;
+
+  const updatedTasks = tasks.map(task =>
+    task.id === draggedTaskId
+      ? { ...task, dueDate: dateString }
+      : task
+  );
+
+  setTasks(updatedTasks);
+  localStorage.setItem('studyTasks', JSON.stringify(updatedTasks));
+  setDraggedTaskId(null);
+  };
+
   const handleAddUpdate = () => {
     if (!selectedTaskId || !selectedDate || !newUpdateNote.trim()) return;
 
@@ -218,10 +233,16 @@ const TaskBlock = ({
   onClick: () => void;
 }) => (
   <button
+    draggable
+    onDragStart={(e) => {
+      e.stopPropagation();
+      setDraggedTaskId(task.id);
+    }}
     onClick={(e) => {
       e.stopPropagation();
       onClick();
     }}
+
     className={`w-full text-left px-2 py-1 rounded-md text-xs font-medium truncate
       ${
         task.priority === 'high'
@@ -344,9 +365,11 @@ const TaskBlock = ({
 
               return (
                 <div
-                  key={index}
-                  onClick={() => handleDotClick(dayInfo.dateString)}
-                  className={`
+                key={index}
+                onClick={() => handleDotClick(dayInfo.dateString)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handleTaskDrop(dayInfo.dateString)}
+                className={`
 
                     relative min-h-32 p-2 rounded-xl border-2 transition-all
                     ${dayInfo.isCurrentMonth 
