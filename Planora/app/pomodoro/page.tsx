@@ -21,6 +21,14 @@ interface StudySession {
   date: string;
 }
 
+interface StudyTemplate {
+  id: string;
+  name: string;
+  focusDuration: number;
+  breakDuration: number;
+  totalCycles?: number;
+}
+
 export default function PomodoroTimer() {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -33,6 +41,14 @@ export default function PomodoroTimer() {
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const DEFAULT_TEMPLATES: StudyTemplate[] = [
+  { id: 'deep-work', name: 'Deep Work Block', focusDuration: 90, breakDuration: 15 },
+  { id: 'quick-review', name: 'Quick Review', focusDuration: 25, breakDuration: 5 },
+  { id: 'exam-prep', name: 'Exam Prep Sprint', focusDuration: 50, breakDuration: 10 },
+  { id: 'active-recall', name: 'Active Recall', focusDuration: 20, breakDuration: 5 },
+  { id: 'reading', name: 'Reading Marathon', focusDuration: 45, breakDuration: 10 },
+];
+  const [templates, setTemplates] = useState<StudyTemplate[]>([]);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
@@ -41,6 +57,13 @@ export default function PomodoroTimer() {
       setTasks(parsedTasks.filter((task: Task) => !task.completed));
     }
 
+    const savedTemplates = localStorage.getItem('studyTemplates');
+    if (savedTemplates) {
+      setTemplates(JSON.parse(savedTemplates));
+    } else {
+      localStorage.setItem('studyTemplates', JSON.stringify(DEFAULT_TEMPLATES));
+      setTemplates(DEFAULT_TEMPLATES);
+    }
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -154,6 +177,15 @@ export default function PomodoroTimer() {
     return ((total - timeLeft) / total) * 100;
   };
 
+  const applyTemplate = (template: StudyTemplate) => {
+    if (isRunning) return;
+
+    setFocusDuration(template.focusDuration);
+    setBreakDuration(template.breakDuration);
+    setIsBreak(false);
+    setTimeLeft(template.focusDuration * 60);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -207,6 +239,23 @@ export default function PomodoroTimer() {
             </div>
           </div>
         </header>
+        
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-white mb-3">
+            🚀 Study Session Templates
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {templates.map(template => (
+              <button
+                key={template.id}
+                onClick={() => applyTemplate(template)}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition"
+              >
+                Start {template.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Timer Section */}
