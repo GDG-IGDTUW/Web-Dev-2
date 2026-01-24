@@ -26,7 +26,10 @@ interface StudyTemplate {
   name: string;
   focusDuration: number;
   breakDuration: number;
-  totalCycles?: number;
+  subject?: string;
+  preBreakNote?: string;
+  postBreakNote?: string;
+  ambiance?: 'silent' | 'bell';
 }
 
 export default function PomodoroTimer() {
@@ -178,13 +181,20 @@ export default function PomodoroTimer() {
   };
 
   const applyTemplate = (template: StudyTemplate) => {
-    if (isRunning) return;
+  if (isRunning) return;
 
-    setFocusDuration(template.focusDuration);
-    setBreakDuration(template.breakDuration);
-    setIsBreak(false);
-    setTimeLeft(template.focusDuration * 60);
-  };
+  setFocusDuration(template.focusDuration);
+  setBreakDuration(template.breakDuration);
+  setIsBreak(false);
+  setTimeLeft(template.focusDuration * 60);
+
+  // auto-select task by subject (if exists)
+  if (template.subject) {
+    const match = tasks.find(t => t.subject === template.subject);
+    if (match) setSelectedTask(match);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 p-4 md:p-6">
@@ -292,6 +302,12 @@ export default function PomodoroTimer() {
                       {formatTime(timeLeft)}
                     </div>
                     <div className={`text-xl font-semibold ${isBreak ? 'text-cyan-300' : 'text-green-300'}`}>
+                      {isBreak && templates.find(t => t.name === 'Exam Prep Sprint')?.preBreakNote && (
+                        <p className="text-sm text-gray-400 mt-2">
+                          {templates.find(t => t.name === 'Exam Prep Sprint')?.preBreakNote}
+                        </p>
+                      )}
+
                       {isBreak ? '☕ Break Time' : '🎯 Focus Time'}
                     </div>
                     {selectedTask && !isBreak && (
