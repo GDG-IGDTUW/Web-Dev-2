@@ -28,7 +28,9 @@ export default function StudyPlanner() {
   const [showAddSession, setShowAddSession] = useState(false);
   const [activeTab, setActiveTab] = useState<'tasks' | 'sessions'>('tasks');
   const [templates, setTemplates] = useState<any[]>([]);
-
+  const [showAddTemplate, setShowAddTemplate] = useState(false);
+  const [templateFocus, setTemplateFocus] = useState(25);
+  const [templateBreak, setTemplateBreak] = useState(5);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
@@ -98,6 +100,14 @@ export default function StudyPlanner() {
   const handlePomodoroClick = () => {
     router.push('/pomodoro');
   };
+
+  const addTemplate = (template: any) => {
+    const updated = [...templates, { ...template, id: Date.now().toString() }];
+    setTemplates(updated);
+    localStorage.setItem('studyTemplates', JSON.stringify(updated));
+    setShowAddTemplate(false);
+  };
+
   const handleCalenderClick = () => {
     router.push('/calender');
   };
@@ -192,6 +202,63 @@ export default function StudyPlanner() {
           <h2 className="text-2xl font-bold text-white mb-4">
             📌 Study Session Templates
           </h2>
+          <button
+            onClick={() => setShowAddTemplate(true)}
+            className="mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg"
+          >
+          + Create Template
+          </button>
+
+          {showAddTemplate && (
+  <div className="bg-gray-800 p-4 rounded-xl mb-6 space-y-3">
+    <input
+      placeholder="Template name"
+      className="w-full p-2 bg-gray-900 text-white rounded"
+      onChange={(e) => (window as any).tmpName = e.target.value}
+    />
+
+    <input
+      placeholder="Subject (optional)"
+      className="w-full p-2 bg-gray-900 text-white rounded"
+      onChange={(e) => (window as any).tmpSubject = e.target.value}
+    />
+
+    <div className="flex gap-3">
+      <input
+        type="number"
+        min={1}
+        className="w-full p-2 bg-gray-900 text-white rounded"
+        value={templateFocus}
+        onChange={(e) => setTemplateFocus(Number(e.target.value))}
+        placeholder="Focus (min)"
+      />
+
+      <input
+        type="number"
+        min={1}
+        className="w-full p-2 bg-gray-900 text-white rounded"
+        value={templateBreak}
+        onChange={(e) => setTemplateBreak(Number(e.target.value))}
+        placeholder="Break (min)"
+      />
+    </div>
+
+    <button
+      onClick={() =>
+        addTemplate({
+          name: (window as any).tmpName,
+          subject: (window as any).tmpSubject,
+          focusDuration: templateFocus,
+          breakDuration: templateBreak,
+        })
+      }
+      className="bg-green-600 px-4 py-2 rounded text-white"
+    >
+      Save Template
+    </button>
+  </div>
+)}
+
           <div className="flex flex-wrap gap-3">
             {templates.length === 0 ? (
               <p className="text-gray-400">No templates available</p>
