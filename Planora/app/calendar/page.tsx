@@ -42,12 +42,15 @@ export default function Calendar() {
   const [newUpdateProgress, setNewUpdateProgress] = useState(0);
   const [newUpdateTimeSpent, setNewUpdateTimeSpent] = useState(30);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
     const savedSessions = localStorage.getItem('studySessions');
     const savedTaskUpdates = localStorage.getItem('taskUpdates');
-    
+    const savedTemplates = localStorage.getItem('studyTemplates');
+    if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
+
     if (savedTasks) setTasks(JSON.parse(savedTasks));
     if (savedSessions) setSessions(JSON.parse(savedSessions));
     if (savedTaskUpdates) setTaskUpdates(JSON.parse(savedTaskUpdates));
@@ -283,6 +286,15 @@ const TaskBlock = ({
               >
                 Pomodoro Timer →
               </button>
+              {templates[0] && (
+              <button
+                onClick={() => router.push(`/pomodoro?template=${templates[0].id}`)}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-xl"
+              >
+              Start Study Session 🚀
+              </button>
+            )}
+
             </div>
           </div>
 
