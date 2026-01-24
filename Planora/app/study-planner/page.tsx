@@ -27,14 +27,19 @@ export default function StudyPlanner() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [showAddSession, setShowAddSession] = useState(false);
   const [activeTab, setActiveTab] = useState<'tasks' | 'sessions'>('tasks');
+  const [templates, setTemplates] = useState<any[]>([]);
+
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
     const savedSessions = localStorage.getItem('studySessions');
-    
+    const savedTemplates = localStorage.getItem('studyTemplates');
+  
     if (savedTasks) setTasks(JSON.parse(savedTasks));
     if (savedSessions) setSessions(JSON.parse(savedSessions));
+    if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
   }, []);
+
 
   useEffect(() => {
     localStorage.setItem('studyTasks', JSON.stringify(tasks));
@@ -183,6 +188,25 @@ export default function StudyPlanner() {
           </div>
         </header>
 
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            📌 Study Session Templates
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {templates.length === 0 ? (
+              <p className="text-gray-400">No templates available</p>
+            ) : (
+              templates.map(t => (
+                <div
+                  key={t.id}
+                  className="px-4 py-2 bg-gray-800/60 border border-gray-700 rounded-lg text-gray-300"
+                >
+                  {t.name} · {t.focusDuration}m / {t.breakDuration}m
+                </div>
+              ))
+            )}
+          </div>
+        </div>
         {/* Main Content */}
         <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-gray-700/50 shadow-2xl">
           {/* Tabs */}
