@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Copy, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ExportDropdown }  from "./ExportDropdown"; // [1] Import the new component
 
 interface CodePreviewProps {
   code: string;
@@ -24,14 +25,10 @@ export const CodePreview = ({ code, framework }: CodePreviewProps) => {
 
   const getLanguageLabel = () => {
     switch (framework) {
-      case "html":
-        return "HTML / CSS";
-      case "tailwind":
-        return "HTML + Tailwind";
-      case "react":
-        return "React + Tailwind";
-      default:
-        return "Code";
+      case "html": return "HTML / CSS";
+      case "tailwind": return "HTML + Tailwind";
+      case "react": return "React + Tailwind";
+      default: return "Code";
     }
   };
 
@@ -45,24 +42,30 @@ export const CodePreview = ({ code, framework }: CodePreviewProps) => {
             {getLanguageLabel()}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCopy}
-          className="gap-2"
-        >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4 text-success" />
-              <span className="text-success">Copied!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              <span>Copy</span>
-            </>
-          )}
-        </Button>
+        
+        {/* [2] Grouped Actions: Copy and Export */}
+        <div className="flex items-center gap-2">
+          <ExportDropdown code={code} framework={framework} /> {/* Added framework prop here */}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            className="gap-2"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-success" />
+                <span className="text-success">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                <span>Copy</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
       
       <div className="relative rounded-lg border border-code-border bg-code overflow-hidden">
@@ -73,19 +76,17 @@ export const CodePreview = ({ code, framework }: CodePreviewProps) => {
             <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
             <div className="w-3 h-3 rounded-full bg-success/60" />
           </div>
-          <span className="text-xs text-muted-foreground ml-2">component.{framework === "react" ? "tsx" : "html"}</span>
+          <span className="text-xs text-muted-foreground ml-2">
+            component.{framework === "react" ? "tsx" : "html"}
+          </span>
         </div>
         
-        {/* Code content */}
         <div className="relative">
           <pre className="p-4 overflow-x-auto code-scrollbar max-h-[400px]">
             <code className="text-sm font-mono text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
               {code}
             </code>
           </pre>
-          
-          {/* Line numbers gutter effect */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-code to-transparent pointer-events-none" />
         </div>
       </div>
     </div>
