@@ -20,6 +20,17 @@ interface StudySession {
   date: string;
 }
 
+interface StudyTemplate {
+  id: string;
+  name: string;
+  focusDuration: number;
+  breakDuration: number;
+  subject?: string;
+  preBreakNote?: string;
+  postBreakNote?: string;
+  ambiance?: 'silent' | 'bell';
+}
+
 export default function StudyPlanner() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -27,14 +38,23 @@ export default function StudyPlanner() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [showAddSession, setShowAddSession] = useState(false);
   const [activeTab, setActiveTab] = useState<'tasks' | 'sessions'>('tasks');
+  const [templates, setTemplates] = useState<StudyTemplate[]>([]);
+  const [showAddTemplate, setShowAddTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateSubject, setTemplateSubject] = useState('');
+  const [templateFocus, setTemplateFocus] = useState(25);
+  const [templateBreak, setTemplateBreak] = useState(5);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
     const savedSessions = localStorage.getItem('studySessions');
-    
+    const savedTemplates = localStorage.getItem('studyTemplates');
+  
     if (savedTasks) setTasks(JSON.parse(savedTasks));
     if (savedSessions) setSessions(JSON.parse(savedSessions));
+    if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
   }, []);
+
 
   useEffect(() => {
     localStorage.setItem('studyTasks', JSON.stringify(tasks));
@@ -93,6 +113,14 @@ export default function StudyPlanner() {
   const handlePomodoroClick = () => {
     router.push('/pomodoro');
   };
+
+  const addTemplate = (template: Omit<StudyTemplate, 'id'>) => {
+    const updated = [...templates, { ...template, id: Date.now().toString() }];
+    setTemplates(updated);
+    localStorage.setItem('studyTemplates', JSON.stringify(updated));
+    setShowAddTemplate(false);
+  };
+
   const handleCalenderClick = () => {
     router.push('/calender');
   };
@@ -183,6 +211,84 @@ export default function StudyPlanner() {
           </div>
         </header>
 
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            📌 Study Session Templates
+          </h2>
+          <button
+            onClick={() => setShowAddTemplate(true)}
+            className="mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg"
+          >
+          + Create Template
+          </button>
+
+          {showAddTemplate && (
+  <div className="bg-gray-800 p-4 rounded-xl mb-6 space-y-3">
+    <input
+  placeholder="Template name"
+  className="w-full p-2 bg-gray-900 text-white rounded"
+  value={templateName}
+  onChange={(e) => setTemplateName(e.target.value)}
+/>
+
+    <input
+  placeholder="Subject (optional)"
+  className="w-full p-2 bg-gray-900 text-white rounded"
+  value={templateSubject}
+  onChange={(e) => setTemplateSubject(e.target.value)}
+/>
+
+    <div className="flex gap-3">
+      <input
+        type="number"
+        min={1}
+        className="w-full p-2 bg-gray-900 text-white rounded"
+        value={templateFocus}
+        onChange={(e) => setTemplateFocus(Number(e.target.value))}
+        placeholder="Focus (min)"
+      />
+
+      <input
+        type="number"
+        min={1}
+        className="w-full p-2 bg-gray-900 text-white rounded"
+        value={templateBreak}
+        onChange={(e) => setTemplateBreak(Number(e.target.value))}
+        placeholder="Break (min)"
+      />
+    </div>
+
+    <button
+      onClick={() =>
+  addTemplate({
+    name: templateName,
+    subject: templateSubject,
+    focusDuration: templateFocus,
+    breakDuration: templateBreak,
+  })
+}
+      className="bg-green-600 px-4 py-2 rounded text-white"
+    >
+      Save Template
+    </button>
+  </div>
+)}
+
+          <div className="flex flex-wrap gap-3">
+            {templates.length === 0 ? (
+              <p className="text-gray-400">No templates available</p>
+            ) : (
+              templates.map(t => (
+                <div
+                  key={t.id}
+                  className="px-4 py-2 bg-gray-800/60 border border-gray-700 rounded-lg text-gray-300"
+                >
+                  {t.name} · {t.focusDuration}m / {t.breakDuration}m
+                </div>
+              ))
+            )}
+          </div>
+        </div>
         {/* Main Content */}
         <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-gray-700/50 shadow-2xl">
           {/* Tabs */}
