@@ -40,6 +40,8 @@ export default function StudyPlanner() {
   const [activeTab, setActiveTab] = useState<'tasks' | 'sessions'>('tasks');
   const [templates, setTemplates] = useState<StudyTemplate[]>([]);
   const [showAddTemplate, setShowAddTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateSubject, setTemplateSubject] = useState('');
   const [templateFocus, setTemplateFocus] = useState(25);
   const [templateBreak, setTemplateBreak] = useState(5);
 
@@ -223,16 +225,18 @@ export default function StudyPlanner() {
           {showAddTemplate && (
   <div className="bg-gray-800 p-4 rounded-xl mb-6 space-y-3">
     <input
-      placeholder="Template name"
-      className="w-full p-2 bg-gray-900 text-white rounded"
-      onChange={(e) => (window as any).tmpName = e.target.value}
-    />
+  placeholder="Template name"
+  className="w-full p-2 bg-gray-900 text-white rounded"
+  value={templateName}
+  onChange={(e) => setTemplateName(e.target.value)}
+/>
 
     <input
-      placeholder="Subject (optional)"
-      className="w-full p-2 bg-gray-900 text-white rounded"
-      onChange={(e) => (window as any).tmpSubject = e.target.value}
-    />
+  placeholder="Subject (optional)"
+  className="w-full p-2 bg-gray-900 text-white rounded"
+  value={templateSubject}
+  onChange={(e) => setTemplateSubject(e.target.value)}
+/>
 
     <div className="flex gap-3">
       <input
@@ -256,13 +260,13 @@ export default function StudyPlanner() {
 
     <button
       onClick={() =>
-        addTemplate({
-          name: (window as any).tmpName,
-          subject: (window as any).tmpSubject,
-          focusDuration: templateFocus,
-          breakDuration: templateBreak,
-        })
-      }
+  addTemplate({
+    name: templateName,
+    subject: templateSubject,
+    focusDuration: templateFocus,
+    breakDuration: templateBreak,
+  })
+}
       className="bg-green-600 px-4 py-2 rounded text-white"
     >
       Save Template
