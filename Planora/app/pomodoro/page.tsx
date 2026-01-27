@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Task {
   id: string;
@@ -34,6 +34,7 @@ interface StudyTemplate {
 
 export default function PomodoroTimer() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
@@ -52,28 +53,9 @@ export default function PomodoroTimer() {
   { id: 'reading', name: 'Reading Marathon', focusDuration: 45, breakDuration: 10 },
 ];
   const [templates, setTemplates] = useState<StudyTemplate[]>([]);
-
-  useEffect(() => {
-    const savedTasks = localStorage.getItem('studyTasks');
-    if (savedTasks) {
-      const parsedTasks = JSON.parse(savedTasks);
-      setTasks(parsedTasks.filter((task: Task) => !task.completed));
-    }
-
-    const savedTemplates = localStorage.getItem('studyTemplates');
-    if (savedTemplates) {
-      setTemplates(JSON.parse(savedTemplates));
-    } else {
-      localStorage.setItem('studyTemplates', JSON.stringify(DEFAULT_TEMPLATES));
-      setTemplates(DEFAULT_TEMPLATES);
-    }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
+  const [activeTemplate, setActiveTemplate] = useState<StudyTemplate | null>(null);
+  
+  
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
@@ -183,6 +165,8 @@ export default function PomodoroTimer() {
   const applyTemplate = (template: StudyTemplate) => {
   if (isRunning) return;
 
+  setActiveTemplate(template);
+
   setFocusDuration(template.focusDuration);
   setBreakDuration(template.breakDuration);
   setIsBreak(false);
@@ -194,6 +178,40 @@ export default function PomodoroTimer() {
     if (match) setSelectedTask(match);
   }
 };
+
+  useEffect(() => {
+    const savedTasks = localStorage.getItem('studyTasks');
+    if (savedTasks) {
+      const parsedTasks = JSON.parse(savedTasks);
+      setTasks(parsedTasks.filter((task: Task) => !task.completed));
+    }
+
+    const savedTemplates = localStorage.getItem('studyTemplates');
+    if (savedTemplates) {
+      setTemplates(JSON.parse(savedTemplates));
+    } else {
+      localStorage.setItem('studyTemplates', JSON.stringify(DEFAULT_TEMPLATES));
+      setTemplates(DEFAULT_TEMPLATES);
+    }
+    const templateId = searchParams.get('template');
+if (templateId) {
+  const found = (savedTemplates
+    ? JSON.parse(savedTemplates)
+    : DEFAULT_TEMPLATES
+  ).find((t: StudyTemplate) => t.id === templateId);
+
+  if (found) {
+    // defer until templates are set
+    setTimeout(() => applyTemplate(found), 0);
+  }
+}
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
 
   return (
@@ -302,9 +320,9 @@ export default function PomodoroTimer() {
                       {formatTime(timeLeft)}
                     </div>
                     <div className={`text-xl font-semibold ${isBreak ? 'text-cyan-300' : 'text-green-300'}`}>
-                      {isBreak && templates.find(t => t.name === 'Exam Prep Sprint')?.preBreakNote && (
+                      {isBreak && activeTemplate?.preBreakNote && (
                         <p className="text-sm text-gray-400 mt-2">
-                          {templates.find(t => t.name === 'Exam Prep Sprint')?.preBreakNote}
+                          {activeTemplate.preBreakNote}
                         </p>
                       )}
 
