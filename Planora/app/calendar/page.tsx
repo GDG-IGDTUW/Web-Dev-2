@@ -29,6 +29,18 @@ interface TaskUpdate {
   timeSpent: number; // in minutes
 }
 
+interface StudyTemplate {
+  id: string;
+  name: string;
+  focusDuration: number;
+  breakDuration: number;
+  subject?: string;
+  preBreakNote?: string;
+  postBreakNote?: string;
+  ambiance?: 'silent' | 'bell';
+}
+
+
 export default function Calendar() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -42,7 +54,7 @@ export default function Calendar() {
   const [newUpdateProgress, setNewUpdateProgress] = useState(0);
   const [newUpdateTimeSpent, setNewUpdateTimeSpent] = useState(30);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<StudyTemplate[]>([]);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('studyTasks');
