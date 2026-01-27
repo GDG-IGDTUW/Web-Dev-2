@@ -20,6 +20,17 @@ interface StudySession {
   date: string;
 }
 
+interface StudyTemplate {
+  id: string;
+  name: string;
+  focusDuration: number;
+  breakDuration: number;
+  subject?: string;
+  preBreakNote?: string;
+  postBreakNote?: string;
+  ambiance?: 'silent' | 'bell';
+}
+
 export default function StudyPlanner() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -27,7 +38,7 @@ export default function StudyPlanner() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [showAddSession, setShowAddSession] = useState(false);
   const [activeTab, setActiveTab] = useState<'tasks' | 'sessions'>('tasks');
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<StudyTemplate[]>([]);
   const [showAddTemplate, setShowAddTemplate] = useState(false);
   const [templateFocus, setTemplateFocus] = useState(25);
   const [templateBreak, setTemplateBreak] = useState(5);
@@ -101,7 +112,7 @@ export default function StudyPlanner() {
     router.push('/pomodoro');
   };
 
-  const addTemplate = (template: any) => {
+  const addTemplate = (template: Omit<StudyTemplate, 'id'>) => {
     const updated = [...templates, { ...template, id: Date.now().toString() }];
     setTemplates(updated);
     localStorage.setItem('studyTemplates', JSON.stringify(updated));
