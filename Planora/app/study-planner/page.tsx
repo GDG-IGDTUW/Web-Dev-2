@@ -75,10 +75,22 @@ export default function StudyPlanner() {
   };
 
   const toggleTask = (id: string) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+    setTasks(tasks.map(task => {
+      if (task.id === id) {
+        // ✅ Log task completion ONLY when marking complete
+        if (!task.completed) {
+          localStorage.setItem(
+            "tasksCompleted",
+            String(Number(localStorage.getItem("tasksCompleted") || 0) + 1)
+          );
+        }
+
+        return { ...task, completed: !task.completed };
+      }
+      return task;
+    }));
   };
+
 
   const deleteTask = (id: string) => {
     setTasks(tasks.filter(task => task.id !== id));
@@ -125,6 +137,11 @@ export default function StudyPlanner() {
     router.push('/calender');
   };
 
+  const handleAnalyticsClick = () => {
+    router.push('/analytics');
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -161,6 +178,19 @@ export default function StudyPlanner() {
               Calender
               <span className="group-hover:translate-x-1 transition-transform">→</span>
             </button>
+
+            <button
+              onClick={handleAnalyticsClick}
+              className="group relative bg-gradient-to-r from-emerald-600 to-cyan-600 text-white px-6 py-3 rounded-xl hover:from-emerald-700 hover:to-cyan-700 transition-all duration-300 shadow-xl hover:shadow-cyan-500/20 flex items-center gap-2"
+            >
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+              </span>
+              Analytics
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </button>
+
           </div>
 
           {/* Stats Cards */}
