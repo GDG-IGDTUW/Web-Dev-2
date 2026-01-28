@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "next": "16.1.1",
     "react": "19.2.3",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
@@ -18,9 +20,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.23",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5"
   }
 }
