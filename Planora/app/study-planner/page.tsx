@@ -134,7 +134,7 @@ export default function StudyPlanner() {
   };
 
   const handleCalenderClick = () => {
-    router.push('/calender');
+    router.push('/calendar');
   };
 
   const handleAnalyticsClick = () => {
