@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { Link } from "react-router-dom";
 import { Sparkles, Code2, ArrowLeft } from "lucide-react";
 import { PromptInput } from "@/components/PromptInput";
@@ -23,7 +24,14 @@ import { toast } from "sonner";
 
 const GeneratorPage = () => {
   // State for the prompt input
-  const [prompt, setPrompt] = useState("");
+  const {
+  value: prompt,
+  set: setPrompt,
+  undo,
+  redo,
+  canUndo,
+  canRedo,
+} = useUndoRedo("");
   
   // State for selected framework
   const [framework, setFramework] = useState<Framework>("react");
@@ -46,7 +54,7 @@ const GeneratorPage = () => {
       toast.error("Please enter a description for your component");
       return;
     }
-
+    setPrompt(prompt);
     setIsLoading(true);
     setGeneratedCode(null);
 
@@ -114,6 +122,25 @@ const GeneratorPage = () => {
                   onChange={setPrompt}
                   disabled={isLoading}
                 />
+                <div className="flex gap-2 mt-2">
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={undo}
+    disabled={!canUndo || isLoading}
+  >
+    Undo
+  </Button>
+
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={redo}
+    disabled={!canRedo || isLoading}
+  >
+    Redo
+  </Button>
+</div>
               </div>
               
               {/* Framework selector */}
