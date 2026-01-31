@@ -1,4 +1,10 @@
 import { useState } from "react";
+import Prism from "prismjs";
+import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/components/prism-jsx";
+import "prismjs/components/prism-tsx";
+import "prismjs/components/prism-markup";
+import "prismjs/components/prism-css";
 import { Check, Copy, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -31,6 +37,19 @@ export const CodePreview = ({ code, framework }: CodePreviewProps) => {
       default: return "Code";
     }
   };
+
+  const getPrismLanguage = () => {
+  switch (framework) {
+    case "html":
+      return "markup";
+    case "tailwind":
+      return "markup";
+    case "react":
+      return "tsx";
+    default:
+      return "markup";
+  }
+};
 
   return (
     <div className="animate-fade-in-up">
@@ -83,10 +102,17 @@ export const CodePreview = ({ code, framework }: CodePreviewProps) => {
         
         <div className="relative">
           <pre className="p-4 overflow-x-auto code-scrollbar max-h-[400px]">
-            <code className="text-sm font-mono text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
-              {code}
-            </code>
-          </pre>
+  <code
+    className={`language-${getPrismLanguage()} text-sm font-mono leading-relaxed`}
+    dangerouslySetInnerHTML={{
+      __html: Prism.highlight(
+        code,
+        Prism.languages[getPrismLanguage()],
+        getPrismLanguage()
+      ),
+    }}
+  />
+</pre>
         </div>
       </div>
     </div>
