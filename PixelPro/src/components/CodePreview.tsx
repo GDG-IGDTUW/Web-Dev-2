@@ -17,17 +17,27 @@ interface CodePreviewProps {
 
 export const CodePreview = ({ code, framework }: CodePreviewProps) => {
   const [copied, setCopied] = useState(false);
+  const [showCopied, setShowCopied] = useState(false);
+
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      toast.success("Code copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error("Failed to copy code");
-    }
-  };
+  try {
+    await navigator.clipboard.writeText(code);
+
+    setCopied(true);
+    setShowCopied(true);
+    toast.success("Code copied to clipboard!");
+
+    // Fade out after a short duration
+    setTimeout(() => {
+      setShowCopied(false);
+      setCopied(false);
+    }, 1500);
+  } catch (err) {
+    toast.error("Failed to copy code");
+  }
+};
+
 
   const getLanguageLabel = () => {
     switch (framework) {
@@ -72,17 +82,26 @@ export const CodePreview = ({ code, framework }: CodePreviewProps) => {
             onClick={handleCopy}
             className="gap-2"
           >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 text-success" />
-                <span className="text-success">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4" />
-                <span>Copy</span>
-              </>
-            )}
+            <>
+  {copied ? (
+    <span
+      className={`
+        flex items-center gap-2 text-success
+        transition-opacity duration-300
+        ${showCopied ? "opacity-100" : "opacity-0"}
+      `}
+    >
+      <Check className="w-4 h-4" />
+      Copied!
+    </span>
+  ) : (
+    <span className="flex items-center gap-2">
+      <Copy className="w-4 h-4" />
+      Copy
+    </span>
+  )}
+</>
+
           </Button>
         </div>
       </div>
