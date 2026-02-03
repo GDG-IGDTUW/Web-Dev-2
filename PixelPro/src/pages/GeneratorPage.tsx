@@ -175,7 +175,10 @@ const GeneratorPage = () => {
                 <Loader />
               ) : generatedCode ? (
                 // Show code preview when code is generated
-               <MultiFrameworkPreview codeMap={generatedCode} />
+               <CodePreview
+  code={generatedCode[framework]}
+  framework={framework}
+/>
               ) : (
                 // Empty state
                 <div className="flex flex-col items-center justify-center py-16 text-center">
