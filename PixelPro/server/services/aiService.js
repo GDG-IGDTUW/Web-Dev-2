@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+const generationCache = new Map();
 
 // ============================================
 // MOCK AI RESPONSES
@@ -593,6 +594,24 @@ if (process.env.GEMINI_API_KEY) {
   console.warn("⚠️  No GEMINI_API_KEY found. Using mock responses. Get your key at: https://makersuite.google.com/app/apikey");
 }
 
+export async function generateMultiFrameworkCode(
+  prompt,
+  frameworks = ["react"]
+) {
+  const results = {};
+
+  for (const framework of frameworks) {
+    // Phase 2: still using mock responses
+    if (mockResponses[framework]) {
+      results[framework] = mockResponses[framework].default;
+    } else {
+      results[framework] = "// Unsupported framework";
+    }
+  }
+
+  return results;
+}
+
 /**
  * Creates a detailed system prompt for the AI based on the framework
  */
@@ -655,66 +674,3 @@ User request: ${prompt}
  * @param {string} framework - Target framework (html, tailwind, react)
  * @returns {Promise<string>} Generated code
  */
-export async function generateComponentCode(prompt, framework) {
-  const modelNames = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5",
-    "gemini-1.0"
-  ];
-
-  if (genAI) {
-    for (const modelName of modelNames) {
-      try {
-        console.log(`🤖 Trying model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const systemPrompt = createSystemPrompt(prompt, framework);
-
-        // Modify system prompt to remove responsiveness
-        const nonResponsivePrompt = systemPrompt.replace(/Make it responsive/g, "");
-
-        const result = await model.generateContent(nonResponsivePrompt);
-        const response = await result.response;
-        let code = response.text();
-
-        // Clean up the response - remove markdown code blocks if present
-        code = code.replace(/```[\w]*\n?/g, '').trim();
-
-        console.log(`✅ AI generation successful with model ${modelName} (${code.length} characters)`);
-        return code;
-      } catch (error) {
-        console.error(`❌ Model ${modelName} failed:`, error.message);
-      }
-    }
-
-    console.log("⚠️  All models failed. Falling back to mock response.");
-  }
-
-  // Fallback to mock responses
-  console.log(`📦 Using mock response for ${framework} component`);
-  await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
-
-  const promptLower = prompt.toLowerCase();
-
-  if (framework === "html") {
-    if (promptLower.includes("button")) {
-      return mockResponses.html.button;
-    }
-    return mockResponses.html.default;
-  }
-
-  if (framework === "tailwind") {
-    if (promptLower.includes("form") || promptLower.includes("login")) {
-      return mockResponses.tailwind.form;
-    }
-    return mockResponses.tailwind.default;
-  }
-
-  if (framework === "react") {
-    if (promptLower.includes("button")) {
-      return mockResponses.react.button;
-    }
-    return mockResponses.react.default;
-  }
-
-  return mockResponses[framework].default;
-}
