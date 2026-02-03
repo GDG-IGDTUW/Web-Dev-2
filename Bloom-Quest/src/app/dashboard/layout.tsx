@@ -19,7 +19,7 @@ export default async function DashboardLayout({
     return (
         <section className="min-h-screen bg-transparent flex flex-col pt-24">
             <Navbar />
-            <main className="flex-1 container py-8 px-4 md:px-6 mx-auto">
+            <main className="flex-1 container py-6 px-4 md:px-6 mx-auto">
                 {children}
             </main>
         </section>
