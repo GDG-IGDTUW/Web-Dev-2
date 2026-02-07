@@ -205,6 +205,82 @@ const Feature: React.FC<{ text: string }> = ({ text }) => (
 
 export default Card;`,
   },
+  vue: {
+  default: `<template>
+  <div class="card">
+    <h2>PixelPro Component</h2>
+    <p>Generated using Vue 3</p>
+    <button @click="onClick">Get Started</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+const onClick = () => alert("Vue component clicked");
+</script>
+
+<style scoped>
+.card {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+</style>`,
+},
+
+angular: {
+  default: `import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-card',
+  template: \`
+    <div class="card">
+      <h2>PixelPro Component</h2>
+      <p>Generated using Angular</p>
+      <button (click)="onClick()">Get Started</button>
+    </div>
+  \`,
+  styles: [\`
+    .card {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+  \`]
+})
+export class CardComponent {
+  onClick() {
+    alert('Angular component clicked');
+  }
+}`,
+},
+
+svelte: {
+  default: `<script>
+  function onClick() {
+    alert('Svelte component clicked');
+  }
+</script>
+
+<div class="card">
+  <h2>PixelPro Component</h2>
+  <p>Generated using Svelte</p>
+  <button on:click={onClick}>Get Started</button>
+</div>
+
+<style>
+.card {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+</style>`,
+},
 };
 
 /**
@@ -216,40 +292,46 @@ export default Card;`,
  * @param framework - Selected framework (html, tailwind, react)
  * @returns Generated component code
  */
-export const generateCode = async (
-  prompt: string,
-  framework: Framework
-): Promise<string> => {
-  try {
-    // Call the backend API
-    const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.generate}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt,
-        framework,
-      }),
-    });
+export type FrameworkCodeMap = Record<Framework, string>;
 
-    // Check if request was successful
+export const generateCode = async (
+  prompt: string
+): Promise<FrameworkCodeMap> => {
+  try {
+    const response = await fetch(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.generate}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          // backend will internally handle multi-framework
+        }),
+      }
+    );
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to generate code");
     }
 
-    // Parse and return the generated code
     const data = await response.json();
-    return data.code;
+    return data.result; // { html, tailwind, react }
   } catch (error) {
-    console.error("API Error:", error);
-    
-    // Fallback to local mock if backend is not available
-    // This allows the frontend to work independently during development
-    console.warn("Backend unavailable, using local mock response");
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return mockResponses[framework].default;
+    console.warn("Backend unavailable, using local mock responses");
+
+    // 🔁 Fallback: generate ALL frameworks locally
+    return {
+  html: mockResponses.html.default,
+  tailwind: mockResponses.tailwind.default,
+  react: mockResponses.react.default,
+  vue: mockResponses.vue.default,
+  angular: mockResponses.angular.default,
+  svelte: mockResponses.svelte.default,
+};
+
   }
 };
 

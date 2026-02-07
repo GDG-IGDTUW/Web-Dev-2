@@ -83,41 +83,15 @@ app.post("/api/generate", async (req, res) => {
   try {
     const { prompt, framework } = req.body;
 
-    // Validate request body
-    if (!prompt || typeof prompt !== "string") {
-      return res.status(400).json({
-        success: false,
-        error: "Missing or invalid 'prompt' in request body",
-      });
-    }
+    const result = await generateMultiFrameworkCode(prompt, [framework]);
 
-    if (!framework || !["html", "tailwind", "react"].includes(framework)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid 'framework'. Must be 'html', 'tailwind', or 'react'",
-      });
-    }
-
-    // Log the generation request
-    console.log(`Generating ${framework} component for prompt: "${prompt.substring(0, 50)}..."`);
-
-    // Generate component code (currently uses mock AI)
-    // TODO: Replace with actual AI API call
-    const code = await generateComponentCode(prompt, framework);
-
-    // Return successful response
     res.json({
-      success: true,
-      code,
+      code: result[framework],
       framework,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Generation error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to generate component. Please try again.",
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 

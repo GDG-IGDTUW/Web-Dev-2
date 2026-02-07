@@ -21,6 +21,7 @@ import { Loader } from "@/components/Loader";
 import { Button } from "@/components/ui/button";
 import { generateCode } from "@/services/mockAI";
 import { toast } from "sonner";
+import { MultiFrameworkPreview } from "@/components/MultiFrameworkPreview";
 
 const GeneratorPage = () => {
   // State for the prompt input
@@ -37,7 +38,9 @@ const GeneratorPage = () => {
   const [framework, setFramework] = useState<Framework>("react");
   
   // State for generated code output
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [generatedCode, setGeneratedCode] =
+  useState<Record<Framework, string> | null>(null);
+
   
   // Loading state while generating
   const [isLoading, setIsLoading] = useState(false);
@@ -60,8 +63,8 @@ const GeneratorPage = () => {
 
     try {
       // Call the mock AI service (will be replaced with real API)
-      const code = await generateCode(prompt, framework);
-      setGeneratedCode(code);
+      const result = await generateCode(prompt);
+      setGeneratedCode(result);
       toast.success("Component generated successfully!");
     } catch (error) {
       toast.error("Failed to generate component. Please try again.");
@@ -172,7 +175,10 @@ const GeneratorPage = () => {
                 <Loader />
               ) : generatedCode ? (
                 // Show code preview when code is generated
-                <CodePreview code={generatedCode} framework={framework} />
+               <CodePreview
+  code={generatedCode[framework]}
+  framework={framework}
+/>
               ) : (
                 // Empty state
                 <div className="flex flex-col items-center justify-center py-16 text-center">

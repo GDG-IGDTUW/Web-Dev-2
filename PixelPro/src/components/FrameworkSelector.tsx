@@ -6,7 +6,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type Framework = "html" | "tailwind" | "react";
+export type Framework =
+  | "html"
+  | "tailwind"
+  | "react"
+  | "vue"
+  | "angular"
+  | "svelte";
 
 interface FrameworkSelectorProps {
   value: Framework;
@@ -15,9 +21,12 @@ interface FrameworkSelectorProps {
 }
 
 const frameworks = [
-  { value: "html" as const, label: "HTML / CSS", description: "Pure HTML with vanilla CSS" },
-  { value: "tailwind" as const, label: "Tailwind CSS", description: "HTML with Tailwind utility classes" },
-  { value: "react" as const, label: "React", description: "React component with Tailwind" },
+  { value: "html", label: "HTML / CSS", description: "Pure HTML with vanilla CSS" },
+  { value: "tailwind", label: "Tailwind CSS", description: "HTML with Tailwind utility classes" },
+  { value: "react", label: "React", description: "React component with Tailwind" },
+  { value: "vue", label: "Vue 3", description: "Vue Single File Component" },
+  { value: "angular", label: "Angular", description: "Angular standalone component" },
+  { value: "svelte", label: "Svelte", description: "Svelte component" },
 ];
 
 export const FrameworkSelector = ({ value, onChange, disabled }: FrameworkSelectorProps) => {
