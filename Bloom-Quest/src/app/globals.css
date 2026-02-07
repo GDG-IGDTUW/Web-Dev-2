@@ -126,3 +126,38 @@ h5,
 h6 {
   font-family: var(--font-heading), sans-serif;
 }
+
+/* Add this at the bottom of your globals.css */
+
+@layer base {
+  body {
+    /* Subtle mesh gradient using your theme colors */
+    background-image: 
+      radial-gradient(at 0% 0%, oklch(0.85 0.12 150 / 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(0.85 0.12 20 / 0.1) 0px, transparent 50%);
+    background-attachment: fixed;
+    background-size: 150% 150%;
+    animation: gradient-shift 15s ease infinite alternate;
+  }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(12deg); }
+  100% { transform: translateX(200%) skewX(12deg); }
+}
+
+@layer utilities {
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
