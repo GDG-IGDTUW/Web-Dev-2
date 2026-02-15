@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { getSession } from '@/lib/auth';
+import { checkWithering } from '@/lib/withering';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,14 @@ export async function GET() {
             return NextResponse.json({ user: null }, { status: 200 });
         }
 
+        // Check and apply withering
+        const { isWithered, newXp } = checkWithering(user.lastActiveDate, user.xp);
+        if (isWithered !== user.isWithered || newXp !== user.xp) {
+            user.isWithered = isWithered;
+            user.xp = newXp;
+            await user.save();
+        }
+
         return NextResponse.json(
             {
                 user: {
@@ -30,7 +39,8 @@ export async function GET() {
                     coins: user.coins,
                     inventory: user.inventory || [],
                     equippedItems: user.equippedItems || { pot: 'basic', decor: 'none', background: 'default' },
-                    placedItems: user.placedItems || []
+                    placedItems: user.placedItems || [],
+                    isWithered: user.isWithered || false
                 }
             },
             { status: 200 }

@@ -22,6 +22,9 @@ export async function POST(req: Request) {
     user.coins = (user.coins || 0) + coinsEarned;
     user.xp = (user.xp || 0) + xpEarned;
 
+    // Reset withering when user becomes active
+    user.isWithered = false;
+
     // Update Daily Stats
     const today = new Date().toISOString().split('T')[0];
     if (!user.dailyStats) user.dailyStats = [];

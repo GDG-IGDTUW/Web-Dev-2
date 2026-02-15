@@ -88,7 +88,8 @@ export default function DashboardView({ initialUser, initialHabits, initialChall
                     xp: data.userXp,
                     plantStage: data.userStage,
                     streak: data.userStreak,
-                    coins: data.userCoins
+                    coins: data.userCoins,
+                    isWithered: false // Reset withering when user becomes active
                 });
 
                 // Trigger confetti
@@ -156,41 +157,29 @@ export default function DashboardView({ initialUser, initialHabits, initialChall
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 z-10" />
                     </div>
 
-                    <CardHeader className="relative z-20 flex flex-row items-center justify-between pb-0 pt-6 px-6 shrink-0">
-                        <div className="flex flex-col">
-                            <h2 className="text-xl font-bold text-white drop-shadow-md tracking-tight">{user.name}&apos;s Garden</h2>
-                            <div className="flex items-center gap-2 mt-1">
-                                <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/10 shadow-sm transition-transform hover:scale-105 cursor-default">
-                                    <span className="text-yellow-300 drop-shadow-sm">🪙</span>
-                                    <span className="text-white font-bold text-sm">{user.coins || 0}</span>
-                                </div>
-                                <button
-                                    onClick={resetProgress}
-                                    className="bg-white/10 hover:bg-red-500/20 text-white/70 hover:text-red-200 px-2 py-1 rounded-lg text-xs font-medium transition-colors border border-white/5 backdrop-blur-sm"
-                                    title="Reset Progress"
-                                >
-                                    Reset
-                                </button>
-                            </div>
+                    <CardHeader className="relative z-20">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-white text-shadow-lg drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                                Your Garden
+                            </CardTitle>
+                            <StreakCounter streak={user.streak} />
                         </div>
-                        <StreakCounter streak={user.streak} />
+                        <CardDescription className="text-white/80 text-shadow drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+                            {user.plantStage === 0 && "A tiny seed awaits..."}
+                            {user.plantStage === 1 && "Your sprout is growing!"}
+                            {user.plantStage === 2 && "A bud is forming!"}
+                            {user.plantStage === 3 && "Your plant has bloomed! 🌻"}
+                        </CardDescription>
                     </CardHeader>
 
-                    <CardContent className="relative z-20 flex flex-col flex-1 justify-end pb-6 px-6 min-h-0">
-                        <div
-                            className="relative flex-1 flex items-end justify-center pb-4 group/plant cursor-pointer"
-                            onClick={() => router.push('/garden')}
-                        >
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-white/20 blur-[50px] rounded-full opacity-50 group-hover/plant:opacity-80 transition-opacity duration-700" />
-
-                            <div className="relative transform transition-transform duration-500 group-hover/plant:scale-105 group-hover/plant:-translate-y-2 drop-shadow-2xl">
-                                <DynamicPlant
-                                    stage={3}
-                                    potType={user.equippedItems?.pot}
-                                    decorType={user.equippedItems?.decor}
-                                />
-                            </div>
-
+                    <CardContent className="relative z-20 flex flex-col items-center justify-between flex-1 pb-6">
+                        <div className="relative group/plant cursor-pointer" onClick={() => router.push('/garden')}>
+                            <DynamicPlant
+                                stage={user.plantStage}
+                                potType={user.equippedItems?.pot}
+                                decorType={user.equippedItems?.decor}
+                                isWithered={user.isWithered} // Pass withering state
+                            />
                             <span className="absolute bottom-10 opacity-0 group-hover/plant:opacity-100 transition-all duration-300 bg-white/90 text-emerald-900 text-xs font-bold px-4 py-1.5 rounded-full shadow-lg transform translate-y-4 group-hover/plant:translate-y-0 z-30">
                                 Enter Garden
                             </span>

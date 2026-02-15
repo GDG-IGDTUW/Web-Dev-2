@@ -7,9 +7,10 @@ interface DynamicPlantProps {
     style?: React.CSSProperties;
     potType?: string;
     decorType?: string;
+    isWithered?: boolean; // New prop for withering state
 }
 
-export default function DynamicPlant({ stage, className, style, potType = 'pot_clay', decorType = 'decor_none' }: DynamicPlantProps) {
+export default function DynamicPlant({ stage, className, style, potType = 'pot_clay', decorType = 'decor_none', isWithered = false }: DynamicPlantProps) {
     // Animation Variants
     const stemVariants: Variants = {
         seed: { height: 0, transition: { duration: 0.5 } },
@@ -62,6 +63,11 @@ export default function DynamicPlant({ stage, className, style, potType = 'pot_c
 
     const currentVariant = stage === 0 ? 'seed' : stage === 1 ? 'sprout' : stage === 2 ? 'bud' : 'bloom';
 
+    // Withered color adjustments - use brown/gray tones
+    const witheredStemColor = isWithered ? 'bg-gradient-to-r from-amber-900 via-amber-800 to-amber-700' : 'bg-gradient-to-r from-emerald-800 via-emerald-600 to-emerald-500';
+    const witheredLeafColor = isWithered ? 'from-amber-700 to-amber-900' : 'from-emerald-500 to-emerald-700';
+    const witheredPetalColor = isWithered ? 'from-amber-800 via-amber-700 to-amber-600' : 'from-yellow-500 via-yellow-400 to-yellow-200';
+
     // Pot Styles
     const getPotStyle = () => {
         switch (potType) {
@@ -74,6 +80,18 @@ export default function DynamicPlant({ stage, className, style, potType = 'pot_c
 
     return (
         <div className={`relative flex items-end justify-center w-48 h-64 overflow-visible ${className || ''}`} style={style}>
+            {/* Withered overlay indicator */}
+            {isWithered && stage > 0 && (
+                <motion.div 
+                    className="absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-900/90 text-amber-100 text-xs font-bold px-3 py-1 rounded-full shadow-lg z-30"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    💧 Needs care
+                </motion.div>
+            )}
+
             {/* Decor Render */}
             {decorType === 'decor_stones' && (
                 <div className="absolute bottom-2 left-6 w-8 h-6 bg-stone-400 rounded-full z-20 shadow-lg" />
@@ -92,36 +110,40 @@ export default function DynamicPlant({ stage, className, style, potType = 'pot_c
             {/* Dirt/Soil Top */}
             <div className="absolute bottom-20 w-28 h-6 bg-amber-900/90 rounded-[50%] z-10" />
 
-            {/* Stem - Gradient for cylindrical look */}
+            {/* Stem - Gradient for cylindrical look with withered color */}
             <motion.div
-                className="w-4 bg-gradient-to-r from-emerald-800 via-emerald-600 to-emerald-500 rounded-full origin-bottom relative z-0 shadow-lg"
+                className={`w-4 ${witheredStemColor} rounded-full origin-bottom relative z-0 shadow-lg ${isWithered ? 'opacity-80' : ''}`}
                 variants={stemVariants}
                 initial="seed"
                 animate={currentVariant}
+                style={isWithered ? { transform: 'rotate(-5deg)' } : {}}
             >
-                {/* Left Leaf - Organic shape & Gradient */}
+                {/* Left Leaf - Organic shape & Gradient with withered color */}
                 <motion.div
-                    className="absolute bottom-10 -left-6 w-12 h-6 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-tl-none rounded-tr-[50px] rounded-bl-[50px] rounded-br-[10px] origin-right shadow-sm border-t border-emerald-400/30"
+                    className={`absolute bottom-10 -left-6 w-12 h-6 bg-gradient-to-br ${witheredLeafColor} rounded-tl-none rounded-tr-[50px] rounded-bl-[50px] rounded-br-[10px] origin-right shadow-sm border-t ${isWithered ? 'border-amber-800/30 opacity-70' : 'border-emerald-400/30'}`}
                     variants={leafLeftVariants}
+                    style={isWithered ? { transform: 'rotate(-50deg) scale(0.9)' } : {}}
                 />
-                {/* Right Leaf - Organic shape & Gradient */}
+                {/* Right Leaf - Organic shape & Gradient with withered color */}
                 <motion.div
-                    className="absolute bottom-20 -right-6 w-12 h-6 bg-gradient-to-bl from-emerald-500 to-emerald-700 rounded-tr-none rounded-tl-[50px] rounded-br-[50px] rounded-bl-[10px] origin-left shadow-sm border-t border-emerald-400/30"
+                    className={`absolute bottom-20 -right-6 w-12 h-6 bg-gradient-to-bl ${witheredLeafColor} rounded-tr-none rounded-tl-[50px] rounded-br-[50px] rounded-bl-[10px] origin-left shadow-sm border-t ${isWithered ? 'border-amber-800/30 opacity-70' : 'border-emerald-400/30'}`}
                     variants={leafRightVariants}
+                    style={isWithered ? { transform: 'rotate(50deg) scale(0.9)' } : {}}
                 />
 
                 {/* Flower Head Container */}
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-16 h-16 flex items-center justify-center pointer-events-none">
 
-                    {/* Petals Container */}
+                    {/* Petals Container with withered color */}
                     <motion.div
                         className="absolute w-32 h-32 flex items-center justify-center z-0"
                         variants={petalVariants}
+                        style={isWithered ? { opacity: 0.7 } : {}}
                     >
                         {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
                             <motion.div
                                 key={deg}
-                                className="absolute w-6 h-14 bg-gradient-to-t from-yellow-500 via-yellow-400 to-yellow-200 rounded-[50%_50%_0_50%] origin-bottom shadow-md"
+                                className={`absolute w-6 h-14 bg-gradient-to-t ${witheredPetalColor} rounded-[50%_50%_0_50%] origin-bottom shadow-md`}
                                 style={{
                                     rotate: deg,
                                     paddingBottom: '30px',
@@ -133,7 +155,7 @@ export default function DynamicPlant({ stage, className, style, potType = 'pot_c
 
                     {/* Center of the flower */}
                     <motion.div
-                        className="relative z-20 w-14 h-14 shadow-[inset_0_2px_10px_rgba(0,0,0,0.6)] border-4 border-amber-900/50"
+                        className={`relative z-20 w-14 h-14 shadow-[inset_0_2px_10px_rgba(0,0,0,0.6)] border-4 ${isWithered ? 'border-amber-900/70' : 'border-amber-900/50'}`}
                         variants={flowerHeadVariants}
                     >
                         {/* Seed texture details */}
