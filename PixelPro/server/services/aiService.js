@@ -589,9 +589,9 @@ export default Button;`,
 let genAI = null;
 if (process.env.GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  console.log("✅ Google Gemini AI initialized");
+  console.log("Google Gemini AI initialized");
 } else {
-  console.warn("⚠️  No GEMINI_API_KEY found. Using mock responses. Get your key at: https://makersuite.google.com/app/apikey");
+  console.warn("No GEMINI_API_KEY found. Using mock responses. Get your key at: https://makersuite.google.com/app/apikey");
 }
 
 export async function generateMultiFrameworkCode(
@@ -611,9 +611,8 @@ export async function generateMultiFrameworkCode(
 
   return results;
 }
-
 /**
- * Creates a detailed system prompt for the AI based on the framework
+ * Creates a detailed system prompt for the AI based on the framework 
  */
 function createSystemPrompt(prompt, framework) {
   const baseInstructions = `You are an expert frontend developer. Generate ONLY the code, no explanations or markdown formatting.`;
@@ -626,7 +625,6 @@ Requirements:
 - Include <!DOCTYPE html> and complete HTML structure
 - Embed CSS in <style> tags in the <head>
 - Use modern CSS (flexbox, grid where appropriate)
-- Make it responsive
 - Use a clean, modern design
 - Include proper meta tags
 - Add comments explaining key sections
@@ -638,7 +636,6 @@ Generate HTML with Tailwind CSS utility classes.
 Requirements:
 - Use Tailwind CSS utility classes only
 - No custom CSS or <style> tags
-- Make it fully responsive (use sm:, md:, lg: breakpoints)
 - Use modern Tailwind patterns
 - Include proper structure and semantic HTML
 - Use Tailwind's color palette
@@ -657,7 +654,6 @@ Requirements:
 - Make it reusable with props
 - Include proper TypeScript types
 - Use modern React patterns (functional components, hooks)
-- Make it responsive
 
 User request: ${prompt}
 `
@@ -665,6 +661,7 @@ User request: ${prompt}
 
   return baseInstructions + "\n\n" + frameworkInstructions[framework];
 }
+
 
 /**
  * Generates UI component code using Google Gemini AI
