@@ -36,7 +36,7 @@ export const FrameworkSelector = ({ value, onChange, disabled }: FrameworkSelect
         Select Framework
       </label>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="w-full bg-input border-border focus:border-primary focus:ring-primary/20">
+        <SelectTrigger className="w-full min-h-[44px] bg-input border-border focus:border-primary focus:ring-primary/20">
           <SelectValue placeholder="Choose a framework" />
         </SelectTrigger>
         <SelectContent className="bg-popover border-border">
