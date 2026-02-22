@@ -23,7 +23,7 @@ export const PromptInput = ({ value, onChange, disabled }: PromptInputProps) => 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="e.g., A modern login form with email and password fields, social login buttons, and a forgot password link..."
-        className="min-h-[140px] resize-none bg-input border-border focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground/60 font-sans"
+        className="min-h-[120px] sm:min-h-[140px] resize-none bg-input border-border focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground/60 font-sans"
         disabled={disabled}
       />
       <div className="flex flex-wrap gap-2">
@@ -33,7 +33,7 @@ export const PromptInput = ({ value, onChange, disabled }: PromptInputProps) => 
             key={index}
             onClick={() => onChange(prompt)}
             disabled={disabled}
-            className="text-xs px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            className="text-xs px-2.5 py-1.5 min-h-[36px] rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
           >
             {prompt}
           </button>

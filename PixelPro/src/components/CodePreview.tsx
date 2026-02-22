@@ -106,7 +106,8 @@ const toggleLineSelection = (lineNumber: number) => {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex items-center justify-between mb-3">
+      {/* Header: stacks vertically on mobile, side-by-side on sm+ */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
         <div className="flex items-center gap-2">
           <Code2 className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-foreground">Generated Code</span>
@@ -116,45 +117,43 @@ const toggleLineSelection = (lineNumber: number) => {
         </div>
         
         {/* [2] Grouped Actions: Copy and Export */}
-        <div className="flex items-center gap-2">
-          <ExportDropdown code={code} framework={framework} /> {/* Added framework prop here */}
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportDropdown code={code} framework={framework} />
           <Button
-  variant="outline"
-  size="sm"
-  onClick={handleCopySelectedLines}
-  disabled={selectedLines.size === 0}
->
-  Copy Selected
-</Button>
-
+            variant="outline"
+            size="sm"
+            onClick={handleCopySelectedLines}
+            disabled={selectedLines.size === 0}
+            className="min-h-[44px] px-3"
+          >
+            Copy Selected
+          </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="gap-2"
+            className="gap-2 min-h-[44px] px-3"
           >
             <>
-  {copied ? (
-    <span
-      className={`
-        flex items-center gap-2 text-success
-        transition-opacity duration-300
-        ${showCopied ? "opacity-100" : "opacity-0"}
-      `}
-    >
-      <Check className="w-4 h-4" />
-      Copied!
-    </span>
-  ) : (
-    <span className="flex items-center gap-2">
-  <Copy className="w-4 h-4" />
-  Copy
-  <span className="text-xs opacity-60">(Ctrl + C)</span>
-</span>
-
-  )}
-</>
-
+              {copied ? (
+                <span
+                  className={`
+                    flex items-center gap-2 text-success
+                    transition-opacity duration-300
+                    ${showCopied ? "opacity-100" : "opacity-0"}
+                  `}
+                >
+                  <Check className="w-4 h-4" />
+                  Copied!
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Copy className="w-4 h-4" />
+                  Copy
+                  <span className="text-xs opacity-60 hidden sm:inline">(Ctrl + C)</span>
+                </span>
+              )}
+            </>
           </Button>
         </div>
       </div>
@@ -173,7 +172,7 @@ const toggleLineSelection = (lineNumber: number) => {
         </div>
         
         <div className="relative">
-          <pre className="p-4 overflow-x-auto code-scrollbar max-h-[400px]">
+          <pre className="p-3 sm:p-4 overflow-x-auto code-scrollbar max-h-[280px] sm:max-h-[400px]">
   <code className={`language-${getPrismLanguage()} text-sm font-mono`}>
   {codeLines.map((line, index) => {
     const highlighted = Prism.highlight(
