@@ -31,6 +31,7 @@ export interface IUser {
         habitsCompleted: number;
         focusMinutes: number;
     }[];
+    isWithered?: boolean; // New field for withering state
 }
 
 export interface IHabit {

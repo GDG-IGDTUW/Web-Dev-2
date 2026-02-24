@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import Habit from '@/models/Habit';
 import User from '@/models/User';
 import Challenge from '@/models/Challenge';
+import { checkWithering } from '@/lib/withering';
 
 export async function GET(req: Request) {
     // In production, verify a secret key to prevent unauthorized access
@@ -42,17 +43,26 @@ export async function GET(req: Request) {
             });
         }
 
-        // 3. Update Streaks (Simplified Logic)
-        // Real logic needs to check if user completed habits *yesterday*.
-        // If not, reset streak.
-        // This is expensive to do for all users at once without batching.
-        // For specific user, we can check "lastActiveDate".
-        // If lastActiveDate < yesterday, reset streak.
-        // This can be done lazily on user login/fetch instead of cron for scalability.
+        // 3. Check for withering on all users
+        const users = await User.find({});
+        let witheredCount = 0;
 
-        // So Cron mainly just resets the habits and ensures challenge exists.
+        for (const user of users) {
+            const { isWithered, newXp } = checkWithering(user.lastActiveDate, user.xp);
+            
+            // Update user if withering state changed
+            if (isWithered !== user.isWithered || newXp !== user.xp) {
+                user.isWithered = isWithered;
+                user.xp = newXp;
+                await user.save();
+                if (isWithered) witheredCount++;
+            }
+        }
 
-        return NextResponse.json({ message: 'Daily reset complete' });
+        return NextResponse.json({ 
+            message: 'Daily reset complete',
+            witheredPlants: witheredCount 
+        });
     } catch (error) {
         console.error('Cron error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

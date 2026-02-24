@@ -14,6 +14,7 @@ const UserSchema = new Schema<UserDocument>({
     plantType: { type: String, default: 'sunflower' },
     plantStage: { type: Number, default: 0 },
     xp: { type: Number, default: 0 },
+    isWithered: { type: Boolean, default: false }, // Withering state
 
     // Engagement
     streak: { type: Number, default: 0 },

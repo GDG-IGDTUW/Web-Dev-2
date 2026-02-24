@@ -5,6 +5,7 @@ import Challenge from '@/models/Challenge';
 import { getSession } from '@/lib/auth';
 import DashboardView from '@/components/dashboard/DashboardView';
 import { redirect } from 'next/navigation';
+import { checkWithering } from '@/lib/withering';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,14 @@ export default async function DashboardPage() {
     ]);
 
     if (!user) redirect('/login');
+
+    // Check and apply withering on user load
+    const { isWithered, newXp } = checkWithering(user.lastActiveDate, user.xp);
+    if (isWithered !== user.isWithered || newXp !== user.xp) {
+        user.isWithered = isWithered;
+        user.xp = newXp;
+        await user.save();
+    }
 
     console.log('Dashboard fetch - User:', session.email, 'Coins:', user.coins, 'ID:', session.userId);
 

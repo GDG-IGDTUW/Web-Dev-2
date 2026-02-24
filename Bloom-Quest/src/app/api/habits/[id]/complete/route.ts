@@ -43,6 +43,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         user.streak = streak;
         user.lastActiveDate = lastActiveDate;
 
+        // Reset withering state when user becomes active
+        user.isWithered = false;
+
         // Daily Stats Update
         const today = new Date().toISOString().split('T')[0];
         // Initialize dailyStats if undefined (legacy users)

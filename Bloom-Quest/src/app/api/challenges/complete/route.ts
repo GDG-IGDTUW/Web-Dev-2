@@ -25,10 +25,11 @@ export async function POST(req: Request) {
     }
 
     // Force direct update - much safer for simple ops
+    // Also reset withering when user becomes active
     const updateResult = await User.updateOne(
         { _id: user._id },
         {
-            $set: { lastChallengeCompleted: new Date() },
+            $set: { lastChallengeCompleted: new Date(), isWithered: false },
             $inc: { xp: 50, coins: 50 }
         }
     );
